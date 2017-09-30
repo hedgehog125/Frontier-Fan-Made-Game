@@ -118,6 +118,7 @@ Assets = {
 								if (Game.input.activePointer.isDown) {
 									if ((! vars.menu.clickCooldown) & (! vars.menu.dragging)) {
 										vars.menu.clickCooldown = true
+										beginFade(1, ["menu", 0], 0)
 										playSound("Click_Button")
 									}
 								}
@@ -364,6 +365,7 @@ currentFade = {
 
 GameState = {
 	"preload": function() {
+		Game.load.image("Fade_Dot", "assets/imgs/fade.png")
 		var i = 0
 		for (i in Assets["imgs"]) {
 			Game.load.image(Assets["imgs"][i]["id"], "assets/imgs/" + Assets["imgs"][i]["src"])
@@ -375,6 +377,11 @@ GameState = {
 	},
 	"create": function() {
 		var i = 0
+		fadeDot = Game.add.sprite(0, 0, "Fade_Dot")
+		fadeDot.visible = false
+		fadeDot.width = Game.width
+		fadeDot.height = Game.height
+		
 		for (i in Assets["snds"]) {
 			Loaded["snds"][Assets["snds"][i]["id"]] = Game.add.audio(Assets["snds"][i]["id"])
 		}
@@ -406,11 +413,14 @@ function playSound(id, loop) {
 	Loaded["snds"][id].play()
 }
 
-function beginFade(speed, newState) {
+function beginFade(speed, newState, stoptime) {
 	currentFade = {
-		"active": true,
-		"speed": speed 
+		"tick": 0,
+		"speed": speed,
+		"stopTime": stoptime,
+		"newState": newState
 	}
+	fadeDot.visible = true
 }
 
 function filter(r, g, b, a) {
@@ -533,5 +543,30 @@ function main() {
 	if (status != statusWas) {
 		reset()
 		statusWas = status
+	}
+	
+	if (currentFade["speed"] !== 0) {
+		if (currentFade["tick"] >= (100 / currentFade["speed"]) + currentFade["stopTime"]) {
+			fadeDot.alpha = 1 - (((currentFade["tick"] - currentFade["stopTime"] - (100 / currentFade["speed"])) * currentFade["speed"]) / 100)
+			if (fadeDot.alpha == 0) {
+				currentFade["speed"] = 0
+				fadeDot.visible = false
+			}
+			else {
+				if (fadeDot.alpha == 1) {
+					state = currentFade["newState"]
+				}
+			}
+		}
+		else {
+			if (currentFade["tick"] >= 100 / currentFade["speed"]) {
+				fadeDot.alpha = 1
+			}
+			else {
+				fadeDot.alpha = (currentFade["tick"] * currentFade["speed"]) / 100
+			}
+		}
+		currentFade["tick"]++
+		fadeDot.bringToTop()
 	}
 }

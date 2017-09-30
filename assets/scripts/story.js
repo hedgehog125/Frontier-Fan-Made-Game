@@ -2,7 +2,7 @@
 vars.game.story = {}
 vars.game.story.planetStories = {}
 vars.game.story.main = [
-	"It was the year "
+	"It's the year 2143 and it's around half eleven. When all of a sudden..."
 ]
 vars.game.story.planetStories.Oytera = [
 		
