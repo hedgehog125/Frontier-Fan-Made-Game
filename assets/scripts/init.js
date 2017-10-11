@@ -1,0 +1,9 @@
+vars = {}
+vars.menu = {}
+vars.menu.backgroundSize = 1.2
+vars.menu.logoBob = [0,0, 10]
+vars.menu.hoverCooldown = false
+vars.menu.clickCooldown = false
+vars.menu.dragging = false
+vars.menu.hoverMessage = ""
+vars.game = {}
