@@ -111,7 +111,7 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Main_Menu_Background"
-		},
+		}, // Main menu background
 		{
 			"scripts": {
 				"init": [
@@ -141,7 +141,7 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Logo"
-		},
+		}, // Logo
 		{
 			"scripts": {
 				"init": [
@@ -151,7 +151,6 @@ Assets = {
 							me.y = 300
 							
 							me.anchor.setTo(0.5)
-							me.fixedToCamera = true
 							me.fixedToCamera = true
 							me.inputEnabled = true
 							me.vars.lit = false
@@ -173,6 +172,11 @@ Assets = {
 								if (Game.input.activePointer.isDown) {
 									if ((! vars.menu.clickCooldown) && (! vars.menu.dragging)) {
 										vars.menu.clickCooldown = true
+										
+										vars.game.fireRate = 30
+										vars.game.bulletSpread = 10
+										vars.game.maxHealth = 50
+										
 										beginFade(5, ["game"], 	0)
 										stopSound("Menu_Music")
 										playSound("Click_Button")
@@ -200,7 +204,7 @@ Assets = {
 				"font": "15pt Helvetica",
 				"fill": "black"
 			}
-		},
+		}, // New game
 		{
 			"scripts": {
 				"init": [
@@ -210,7 +214,6 @@ Assets = {
 							me.y = 335
 							
 							me.anchor.setTo(0.5)
-							me.fixedToCamera = true
 							me.fixedToCamera = true
 							me.inputEnabled = true
 							me.vars.lit = false
@@ -257,7 +260,7 @@ Assets = {
 				"font": "15pt Helvetica",
 				"fill": "black"
 			}
-		},
+		}, // Continue game
 		{
 			"scripts": {
 				"init": [
@@ -283,7 +286,7 @@ Assets = {
 				"fill": "black"
 			},
 			"type": "text"
-		},
+		}, // Hover text
 		{
 			"scripts": {
 				"init": [
@@ -331,7 +334,7 @@ Assets = {
 				"fill": "black"
 			},
 			"type": "text"
-		},
+		}, // FPS
 		{
 			"scripts": {
 				"init": [
@@ -363,7 +366,7 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Star_Background"
-		},
+		}, // Star parallax 1
 		{
 			"scripts": {
 				"init": [
@@ -398,7 +401,7 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Star_Background"
-		},
+		}, // Star parallax 2
 		{
 			"scripts": {
 				"init": [
@@ -408,6 +411,9 @@ Assets = {
 							me.vars.animationFrame = 0
 							me.fixedToCamera = true
 							enableTouching()
+							
+							vars.game.health = vars.game.maxHealth
+							vars.game.fireCooldown = 0
 						},
 						"stateToRun": ["game"]
 					}
@@ -448,16 +454,13 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Rocket_1#0"
-		},
+		}, // Spaceship
 		{
 			"scripts": {
 				"init": [
 					{
 						"code": function() {
 							me.visible = false
-							vars.game.fireRate = 30
-							vars.game.fireCooldown = 0
-							vars.game.bulletSpread = 10
 						},
 						"stateToRun": ["game"]
 					}
@@ -527,7 +530,7 @@ Assets = {
 					}
 				]
 			}
-		},
+		}, // Bullets
 		{
 			"scripts": {
 				"init": [
@@ -574,7 +577,21 @@ Assets = {
 						me.vars.type = dataForClone
 						me.vars.hp = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["health"]
 						me.vars.hitFlash = 0
+						me.anchor.setTo(0, 0.5)
 						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["initScript"]()
+						
+						if (me.y < Game.world.centerY) { // Check I'm not too high or low.
+							if (me.y - (me.height / 2) < 0) {
+								me.y = me.height / 2
+							}
+						}
+						else {
+							if (me.y + (me.height / 2) > Game.height) {
+								me.y = Game.height - (me.height / 2)
+							}
+						}
+						
+						
 						enableTouching()
 					}
 				],
@@ -616,7 +633,7 @@ Assets = {
 					}
 				]
 			}
-		},
+		}, // Enemy spaceships
 		{
 			"scripts": {
 				"init": [
@@ -667,7 +684,82 @@ Assets = {
 					}
 				]
 			}
-		}
+		}, // Explosions
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							setHealth = function(health) {
+								vars.game.health = health
+								
+								var execute = Sprites["HealthBar"]
+								
+								execute.ctx.clearRect(0, 0, execute.width, execute.height)
+								
+								execute.ctx.lineWidth = 10
+								execute.ctx.strokeStyle = "#D9D9D9"
+								execute.ctx.beginPath()
+								execute.ctx.moveTo(10, execute.height / 2)
+								execute.ctx.lineTo(execute.width - 10, execute.height / 2)
+								execute.ctx.stroke()
+								
+								execute.ctx.lineWidth = 5
+								execute.ctx.strokeStyle = "red"
+								execute.ctx.beginPath()
+								execute.ctx.moveTo(5, execute.height / 2)
+								execute.ctx.lineTo(execute.width - 5, execute.height / 2)
+								execute.ctx.stroke()
+								
+								execute.ctx.fillRect(0, 0, execute.width, execute.height)
+								
+								execute.update()
+							}
+							//setHealth(50)
+							
+							me.ctx.fillStyle = "red"
+							me.ctx.fillRect(0, 0, me.width, me.height)
+							
+							me.dirty = true
+							
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": null,
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "HealthBar",
+			"type": "canvas",
+			"width": 700,
+			"height": 10
+		}, // Health bar
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": null,
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": null,
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "HealthBar_Frame",
+			"x": 0,
+			"y": 0,
+			"type": "canvasFrame",
+			"bitmapID": "HealthBar",
+			"fixedToCamera": true
+		} // Health bar sprite
 	],
 	"scripts": {
 		"init": [

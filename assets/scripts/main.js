@@ -322,9 +322,18 @@ function create() {
 				me.smoothed = true
 			}
 			else {
-				if (c["type"] == "canvas") {
-					me = Game.make.bitmapData(c["width"], c["height"])
-					me.move(c["x"], c["y"])
+				if (c["type"] == "canvas") { // Help from https://stackoverflow.com/questions/46695098/how-can-i-fix-bitmapdata-to-the-camera-in-phaser/46696512#46696512
+					me = Game.add.bitmapData(c["width"], c["height"])
+					me.addToWorld()
+				}
+				else {
+					if (c["type"] == "canvasFrame") { // Help from https://stackoverflow.com/questions/46695098/how-can-i-fix-bitmapdata-to-the-camera-in-phaser/46696512#46696512
+						me = Game.add.sprite(c["x"], c["y"], Sprites[c["bitmapID"]])
+						
+						if (c["fixedToCamera"]) {
+							me.fixedToCamera = true
+						}
+					}
 				}
 			}
 		}
