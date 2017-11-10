@@ -1,5 +1,7 @@
 Assets = {
 	"imgs": [
+		// Main menu.
+
 		{
 			"id": "Main_Menu_Background",
 			"src": "ship_background.png"
@@ -8,10 +10,16 @@ Assets = {
 			"id": "Logo",
 			"src": "title.png"
 		},
+
+		// Other.
+
 		{
 			"id": "Fade",
 			"src": "fade.png"
 		},
+
+		// Game.
+
 		{
 			"id": "Star_Background",
 			"src": "background.png"
@@ -33,9 +41,14 @@ Assets = {
 			"src": "spaceship_1_3.png"
 		},
 		{
+			"id": "Rocket_1_Hit",
+			"src": "spaceship_1_hit.png"
+		},
+		{
 			"id": "Bullet_Normal",
 			"src": "bullet.png"
 		},
+		// Enemies.
 		{
 			"id": "Enemy_Rocket_1",
 			"src": "enemy_rocket_1.png"
@@ -45,8 +58,56 @@ Assets = {
 			"src": "enemy_rocket_1_hit.png"
 		},
 		{
+			"id": "Enemy_Rocket_2",
+			"src": "enemy_rocket_2.png"
+		},
+		{
+			"id": "Enemy_Bullet",
+			"src": "enemy_bullet.png"
+		},
+		{
+			"id": "Enemy_Bullet_Hit",
+			"src": "enemy_bullet.png" // No hit image.
+		},
+		{
+			"id": "Enemy_Rocket_2_Hit",
+			"src": "enemy_rocket_2_hit.png"
+		},
+
+		{
 			"id": "Explosion",
 			"src": "explosion.png"
+		},
+
+		// Upgrades / world selector.
+
+		{
+			"id": "Tab",
+			"src": "tab.png"
+		},
+		{
+			"id": "Tab_End",
+			"src": "tab_end.png"
+		},
+		{
+			"id": "Arrow_Left",
+			"src": "arrow_left.png"
+		},
+		{
+			"id": "Arrow_Right",
+			"src": "arrow_right.png"
+		},
+		{
+			"id": "Arrow_Left_Hover",
+			"src": "arrow_left_hover.png"
+		},
+		{
+			"id": "Arrow_Right_Hover",
+			"src": "arrow_right_hover.png"
+		},
+		{
+			"id": "Planet_1",
+			"src": "planet_1.png"
 		}
 	],
 	"snds" : [
@@ -94,15 +155,25 @@ Assets = {
 		}
 	],
 	"sprites": [
+
+		// Main menu
+
 		{
 			"scripts": {
 				"init": [
 					{
-						"code": function() {		
-							me.width = Game.width * vars.menu.backgroundSize
-							me.height = Game.height * vars.menu.backgroundSize
+						"code": function() {
+							me.width = Game.world.width
+							me.height = Game.world.height
 						},
 						"stateToRun": ["menu", 0]
+					},
+					{
+						"code": function() {
+							me.width = Game.width
+							me.height = Game.height
+						},
+						"stateToRun": ["menu", 1]
 					}
 				],
 				"main": null
@@ -111,7 +182,8 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Main_Menu_Background"
-		}, // Main menu background
+		},
+		// Main menu background
 		{
 			"scripts": {
 				"init": [
@@ -119,7 +191,7 @@ Assets = {
 						"code": function() {
 							me.x = Game.width / 2
 							me.y = 150
-					
+
 							me.anchor.setTo(0.5)
 							me.width = 400
 							me.height = 200
@@ -141,15 +213,16 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Logo"
-		}, // Logo
+		},
+		// Logo
 		{
 			"scripts": {
 				"init": [
 					{
- 	 					"code": function() {			
+ 	 					"code": function() {
 							me.x = Game.width / 2
 							me.y = 300
-							
+
 							me.anchor.setTo(0.5)
 							me.fixedToCamera = true
 							me.inputEnabled = true
@@ -172,11 +245,14 @@ Assets = {
 								if (Game.input.activePointer.isDown) {
 									if ((! vars.menu.clickCooldown) && (! vars.menu.dragging)) {
 										vars.menu.clickCooldown = true
-										
-										vars.game.fireRate = 30
+
+										vars.game.save = {}
+
+										vars.game.save.fireRate = 30
 										vars.game.bulletSpread = 10
 										vars.game.maxHealth = 50
-										
+
+
 										beginFade(5, ["game"], 	0)
 										stopSound("Menu_Music")
 										playSound("Click_Button")
@@ -204,15 +280,16 @@ Assets = {
 				"font": "15pt Helvetica",
 				"fill": "black"
 			}
-		}, // New game
+		},
+		// New game
 		{
 			"scripts": {
 				"init": [
 					{
- 	 					"code": function() {			
+ 	 					"code": function() {
 							me.x = Game.width / 2
 							me.y = 335
-							
+
 							me.anchor.setTo(0.5)
 							me.fixedToCamera = true
 							me.inputEnabled = true
@@ -260,7 +337,8 @@ Assets = {
 				"font": "15pt Helvetica",
 				"fill": "black"
 			}
-		}, // Continue game
+		},
+		// Continue game
 		{
 			"scripts": {
 				"init": [
@@ -268,11 +346,19 @@ Assets = {
 						"code": function() {
 							me.anchor.setTo(0.5)
 							me.x = Game.width / 2
-							me.y = 440		
-					
+							me.y = 440
+
 							me.fixedToCamera = true
 						},
 						"stateToRun": ["menu", 0]
+					},
+					{
+						"code": function() {
+							me.anchor.setTo(0.5)
+							me.x = Game.width / 2
+							me.y = 440
+						},
+						"stateToRun": ["menu", 1]
 					}
 				],
 				"main": []
@@ -286,12 +372,15 @@ Assets = {
 				"fill": "black"
 			},
 			"type": "text"
-		}, // Hover text
+		},
+		// Hover text
 		{
 			"scripts": {
 				"init": [
 					{
 						"code": function() {
+							me.x = 0
+							me.y = 0
 							me.fixedToCamera = true
 							me.setStyle({
 								"font": "10pt Helvetica",
@@ -302,6 +391,19 @@ Assets = {
 					},
 					{
 						"code": function() {
+							me.x = 0
+							me.y = 0
+							me.setStyle({
+								"font": "10pt Helvetica",
+								"fill": "black"
+							})
+						},
+						"stateToRun": ["menu", 1]
+					},
+					{
+						"code": function() {
+							me.x = 0
+							me.y = 0
 							me.setStyle({
 								"font": "10pt Helvetica",
 								"fill": "white"
@@ -322,7 +424,7 @@ Assets = {
 							me.bringToTop()
 						},
 						"stateToRun": ["game"]
-					}	
+					}
 				]
 			},
 			"id": "FPS_Text",
@@ -334,14 +436,430 @@ Assets = {
 				"fill": "black"
 			},
 			"type": "text"
-		}, // FPS
+		},
+		// FPS
+
+		// World selector | Upgrades
+
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.visible = false
+						},
+						"stateToRun": ["menu", 1]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				]
+			},
+			"id": "Tabs",
+			"x": 0,
+			"y": 0,
+			"cos": "Tab",
+			"clonescripts": {
+				"init": [
+					function() {
+						me.anchor.setTo(0)
+						me.scale.setTo(2)
+
+						me.vars.ID = dataForClone[1]
+						me.vars.parent = Sprites[dataForClone[2]]
+						me.vars.hover = false
+						me.vars.click = false
+
+						me.inputEnabled = true
+
+						me.vars.normalY = me.y
+					}
+				],
+				"main": [
+					function() {
+
+						me.y = vars.menu.logoBob[0] + me.vars.normalY
+
+						if (me.input.pointerOver()) {
+							if (! me.vars.hover) {
+								playSound("Hover_Button")
+
+								me.vars.hover = true
+
+								var execute = me.vars.parent
+								if (! execute.vars.selected) {
+									execute.addColor("#BFBFBF", 0)
+								}
+							}
+							if (Game.input.activePointer.isDown && (! me.vars.click)) {
+								playSound("Click_Button")
+
+								me.vars.click = true
+								vars.menu.changeTab(me.vars.ID)
+							}
+						}
+						else {
+							if (me.vars.hover) {
+								me.vars.hover = false
+
+								var execute = me.vars.parent
+								if (! execute.vars.selected) {
+									execute.addColor("black", 0)
+								}
+							}
+						}
+
+						if (! Game.input.activePointer.isDown) {
+							me.vars.click = false
+						}
+					}
+				]
+			}
+		},
+		// Tabs
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							vars.menu.tab = 0
+
+							var planetImages = []
+							var i = 0
+							for (i in vars.game.planets) {
+								planetImages[planetImages.length] = "Planet_"  + (JSON.parse(i) + 1)
+							}
+
+							vars.menu.tabs = [
+								{
+									"text": "Planets",
+									"content": [
+										{
+											"type": "image",
+											"selected": 0,
+											"imgs": planetImages,
+											"x": 400,
+											"y": 250,
+											"initfunc": function() {
+												me.width = 300
+												me.height = 300
+											},
+											"mainfunc": function() {
+
+											}
+										},
+										{
+											"type": "button",
+											"selected": 0,
+											"imgs": [
+												"Arrow_Left"
+											],
+											"x": 200,
+											"y": 250,
+											"initfunc": function() {
+												me.scale.setTo(10)
+
+												me.vars.normalImg = me.key
+											},
+											"mainfunc": function() {
+												me.x = me.vars.normalX - vars.menu.logoBob[0]
+											},
+											"clickfunc": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+
+												var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+												plannetSprite.selected--
+												if (plannetSprite.selected < 0) {
+													plannetSprite.selected = plannetSprite.imgs.length - 1
+												}
+											},
+											"hoverstart": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+											},
+											"hoverend": function() {
+												me.loadTexture(me.vars.normalImg)
+											}
+										},
+										{
+											"type": "button",
+											"selected": 0,
+											"imgs": [
+												"Arrow_Right"
+											],
+											"x": 600,
+											"y": 250,
+											"initfunc": function() {
+												me.scale.setTo(10)
+
+												me.vars.normalImg = me.key
+											},
+											"mainfunc": function() {
+												me.x =  me.vars.normalX + vars.menu.logoBob[0]
+											},
+											"clickfunc": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+
+												var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+												plannetSprite.selected++
+												if (plannetSprite.selected > plannetSprite.imgs.length - 1) {
+													plannetSprite.selected = 0
+												}
+											},
+											"hoverstart": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+											},
+											"hoverend": function() {
+												me.loadTexture(me.vars.normalImg)
+											}
+										}
+									]
+								},
+								{
+									"text": "Weapons"
+								},
+								{
+									"text": "Defence"
+								}
+							]
+
+							var spacing = 20
+
+							var i = 0
+							var x = spacing
+
+							for (i in vars.menu.tabs) {
+								var c = vars.menu.tabs[i]
+								clone(x, spacing, undefined, i, c["text"], {
+									"fill": "white"
+								})
+							}
+
+							for (i in vars.menu.tabs) {
+								var c = vars.menu.tabs[i]
+								var execute = Sprites[spriteCloneIds[myJSON.id][i]]
+								var space = (Game.width / vars.menu.tabs.length) - ((spacing / vars.menu.tabs.length) * 2)
+
+								execute.x = x + 10
+								functionForClone = [
+									function() {
+										me.width = dataForClone[0]
+										return [me.x + (me.width / 2), me.y + (me.height / 2)]
+									},
+									"after"
+								]
+
+								if (i == vars.menu.tabs.length - 1) {
+									var cos = "Tab_End"
+								}
+								else {
+									var cos = "Tab"
+								}
+
+								var returned = cloneSprite(execute.x, execute.y, cos, "Tabs", [
+									space,
+									i,
+									spriteCloneIds[execute.cloneOf][execute.cloneID]
+								])
+								execute.bringToTop()
+
+								execute.anchor.setTo(0.5)
+								execute.x = returned[0]
+								execute.y = returned[1]
+
+								execute.vars.normalY = execute.y
+
+								var x = x + space
+							}
+
+							vars.menu.changeTab = function(id) {
+								if (vars.menu.tab != id) {
+									vars.menu.tab = id
+
+									var i = 0
+									var data = vars.menu.tabs[vars.menu.tab]
+
+									for (i in data.content) {
+										var c = data.content[i]
+										if (c.type == "image" || c.type == "button") {
+											functionForClone = [
+												function() {
+													me.vars.JSONID = dataForClone.JSONID
+													me.vars.tab = dataForClone.tab
+													me.vars.JSON = vars.menu.tabs[me.vars.tab].content[me.vars.JSONID]
+
+													me.anchor.setTo(0.5)
+												},
+												"before"
+											]
+
+											cloneSprite(c.x, c.y, c.imgs[c.selected], "Tab_Content_Sprites", {
+												"JSONID": i,
+												"tab": vars.menu.tab
+											})
+										}
+									}
+								}
+							}
+
+							vars.menu.tab = ! vars.menu.tab
+							vars.menu.changeTab(0)
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				]
+			},
+			"id": "Tabs_Text",
+			"x": 0,
+			"y": 0,
+			"type": "text",
+			"cos": "Tab",
+			"clonescripts": {
+				"init": [
+					function() {
+						me.vars.selected = false
+						me.vars.ID = dataForClone
+						me.vars.JSON = vars.menu.tabs[me.vars.ID]
+
+						me.vars.selected = ! (vars.menu.tab == me.vars.ID)
+
+						me.vars.normalY = me.y
+					}
+				],
+				"main": [
+					function() {
+						if (me.vars.selected != (vars.menu.tab == me.vars.ID)) {
+							me.vars.selected = vars.menu.tab == me.vars.ID
+							if (me.vars.selected) { // Update me.
+								me.addColor("White", 0)
+							}
+							else {
+								me.addColor("Black", 0)
+							}
+						}
+
+						me.y = vars.menu.logoBob[0] + me.vars.normalY
+					}
+				]
+			}
+		},
+		// Tab text
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				]
+			},
+			"id": "Tab_Content_Sprites",
+			"x": 0,
+			"y": 0,
+			"cos": null,
+			"clonescripts": {
+				"init": [
+					function() {
+						me.vars.normalX = me.x
+						me.vars.normalY = me.y
+						me.vars.selectedImgWas = me.vars.JSON.selected
+						if (me.vars.JSON.type == "button") {
+							me.vars.clickCooldown = false
+							me.vars.hoverCooldown = false
+							me.vars.hovering = false
+
+							me.inputEnabled = true
+						}
+
+						me.vars.JSON.initfunc()
+					}
+				],
+				"main": [
+					function() {
+						me.y = vars.menu.logoBob[0] + me.vars.normalY
+
+						if (me.vars.selectedImgWas != me.vars.JSON.selected) {
+							me.vars.selectedImgWas = me.vars.JSON.selected
+							me.loadTexture(me.vars.JSON.imgs[me.vars.JSON.selected])
+						}
+
+						if (me.vars.JSON.type == "button") {
+							if (me.input.pointerOver()) {
+								if (Game.input.activePointer.isDown && (! me.vars.clickCooldown)) {
+									me.vars.clickCooldown = true
+									playSound("Click_Button")
+									me.vars.JSON.clickfunc()
+								}
+								if (! Game.input.activePointer.isDown) {
+									if (! me.vars.hoverCooldown) {
+										playSound("Hover_Button")
+										me.vars.hoverCooldown = true
+										me.vars.JSON.hoverstart()
+										me.vars.hovering = true
+									}
+								}
+							}
+							else {
+								if (me.vars.hoverCooldown) {
+									me.vars.hoverCooldown = false
+									me.vars.JSON.hoverend()
+									me.vars.hovering = false
+								}
+							}
+							if (! Game.input.activePointer.isDown) {
+								me.vars.clickCooldown = false
+							}
+
+							if (me.vars.hovering) {
+								if (me.vars.JSON.hoverMessage != undefined) {
+									vars.menu.hoverMessage = me.vars.JSON.hoverMessage
+								}
+							}
+						}
+
+						me.vars.JSON.mainfunc()
+
+						if (me.vars.tab != vars.menu.tab) {
+							deleteClone()
+						}
+					}
+				]
+			}
+		},
+		// Content
+
+		// Game
+
 		{
 			"scripts": {
 				"init": [
 					{
 						"code": function() {
 							me.anchor.setTo(0.5)
-							
+
 							me.width = Game.world.width
 							me.height = Game.world.height
 							me.x = Game.world.centerX
@@ -366,14 +884,15 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Star_Background"
-		}, // Star parallax 1
+		},
+		// Star parallax 1
 		{
 			"scripts": {
 				"init": [
 					{
 						"code": function() {
 							me.anchor.setTo(0.5)
-						
+
 							me.width = Game.world.width
 							me.height = Game.world.height
 							me.x = Game.width + (me.width / 2) + 50
@@ -385,7 +904,7 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							vars.game.scroll++
+							vars.game.scroll = vars.game.scroll + 0.5
 							Game.world.camera.x = vars.game.scroll
 							Game.world.setBounds(0, 0, Game.width + vars.game.scroll, Game.height)
 							if (me.x + (me.width / 2) < Game.world.camera.x) {
@@ -401,19 +920,23 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Star_Background"
-		}, // Star parallax 2
+		},
+		// Star parallax 2
 		{
 			"scripts": {
 				"init": [
 					{
 						"code": function() {
-							me.anchor.setTo(0.5)
+							me.alpha = 1
 							me.vars.animationFrame = 0
-							me.fixedToCamera = true
-							enableTouching()
-							
+							vars.game.flash = 0
+							vars.game.deathAnimationTick = 0
 							vars.game.health = vars.game.maxHealth
 							vars.game.fireCooldown = 0
+
+							me.fixedToCamera = true
+							me.anchor.setTo(0.5)
+							enableTouching()
 						},
 						"stateToRun": ["game"]
 					}
@@ -421,29 +944,104 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							if (vars.game.zoomAnimation == 0) {
-								glideTo(inX, inY, 10)
+							if (vars.game.deathAnimationTick == 0) {
+								if (vars.game.zoomAnimation == 0) {
+									// Stop me from going offscreen.
+									var glideX = inX
+									var glideY = inY
+									if (glideX - (me.width / 2) < 0) {
+										var glideX = me.width / 2
+									}
+									if (glideX + (me.width / 2) > Game.width) {
+										var glideX = Game.width - (me.width / 2)
+									}
+									if (glideY - (me.height / 2) < 0) {
+										var glideY = me.height / 2
+									}
+									if (glideY + (me.height / 2) > Game.height) {
+										var glideY = Game.height - (me.height / 2)
+									}
+
+									glideTo(glideX, glideY, 10)
+								}
+								else {
+									me.cameraOffset.x = 50
+									me.cameraOffset.y = Game.world.centerY
+									}
+								me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
+								if (Math.floor(me.vars.animationFrame) > 3) {
+									me.vars.animationFrame = 0
+								}
+								if (vars.game.flash == 0) {
+									if (touchingClones("Enemy_Rockets")) { // Hit enemy spaceship.
+										Game.camera.shake(me.width / 5000, 200)
+										playSound("Hit")
+
+										vars.game.flash = 20
+										var enemy = vars.game.planets[vars.game.currentPlanet]["enemies"][Sprites[touchInfo].vars.type]
+										var damage = enemy["damage"]
+										var enemySprite = Sprites[touchInfo]
+
+										if (enemySprite.vars.hitFlash == 0) {
+											enemySprite.loadTexture(enemy["cos"] + "_Hit")
+											enemySprite.vars.hitFlash = 10
+											enemySprite.vars.hp = enemySprite.vars.hp - 1
+										}
+										setHealth(vars.game.health - damage)
+									}
+								}
+
+								if (vars.game.health <= 0) {
+									vars.game.deathAnimationTick = 1
+								}
+
+								if (vars.game.flash > 0) {
+									vars.game.flash--
+									me.loadTexture("Rocket_1_Hit")
+								}
+								else {
+									me.loadTexture("Rocket_1#" + Math.floor(me.vars.animationFrame))
+								}
+
+								if (vars.game.health < vars.game.maxHealth) {
+									setHealth(vars.game.health + 0.005)
+								}
+
+								if (vars.game.zoomAnimation == 1) {
+									vars.game.zoom = vars.game.zoom * 0.995
+									if (vars.game.zoom < 1) {
+										vars.game.zoom = 1
+									}
+									if (Math.round(vars.game.zoom) == 1) {
+										vars.game.zoomAnimation = 0
+									}
+								}
+								me.scale.setTo(vars.game.zoom * 2, vars.game.zoom * 2)
 							}
 							else {
-								me.cameraOffset.x = 50
-								me.cameraOffset.y = Game.world.centerY
-							}
-							me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
-							if (Math.floor(me.vars.animationFrame) > 3) {
-								me.vars.animationFrame = 0
-							} 
-							me.loadTexture("Rocket_1#" + Math.floor(me.vars.animationFrame))
-							if (vars.game.zoomAnimation == 1) {
-								vars.game.zoom = vars.game.zoom * 0.995
-								if (vars.game.zoom < 1) {
-									vars.game.zoom = 1
+								if (vars.game.deathAnimationTick !== "done") {
+									if (((vars.game.deathAnimationTick - 1) % 10) == 0) {
+										playSound("Boom")
+										cloneSprite(me.x + (Game.rnd.integerInRange(-(me.width / 2), me.width / 2)), me.y + (Game.rnd.integerInRange(-(me.height / 2), me.height / 2)), "Explosion", "Explosions", {
+											"size": Game.rnd.integerInRange(30, 40)
+										})
+									}
+									me.loadTexture("Rocket_1#" + Math.floor(me.vars.animationFrame))
+									me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
+									if (Math.floor(me.vars.animationFrame) > 3) {
+										me.vars.animationFrame = 0
+									}
+									vars.game.deathAnimationTick++
+									me.alpha = 1 - (vars.game.deathAnimationTick / 200)
+									if (me.alpha <= 0) {
+										vars.game.deathAnimationTick = "done"
+
+										stopSound("Game_Music")
+										beginFade(1, ["menu", 1], 0) // TODO: Change this to ["menu", 1] there's also a problem now.
+									}
 								}
-								if (Math.round(vars.game.zoom) == 1) {
-									vars.game.zoomAnimation = 0
-								}
 							}
-							me.scale.setTo(vars.game.zoom * 2, vars.game.zoom * 2)
-							
+
 							me.bringToTop()
 						},
 						"stateToRun": ["game"]
@@ -454,7 +1052,8 @@ Assets = {
 			"x": 0,
 			"y": 0,
 			"cos": "Rocket_1#0"
-		}, // Spaceship
+		},
+		// Spaceship
 		{
 			"scripts": {
 				"init": [
@@ -468,14 +1067,16 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							if (vars.game.fireCooldown > vars.game.fireRate) {
-								vars.game.fireCooldown = 0
-								playSound("Shot")
-								clone(Sprites.Rocket.x + (Sprites.Rocket.width / 2), Sprites.Rocket.y, "Bullet_Normal")
-							}
-							else {
-								if (vars.game.zoomAnimation == 0) {
-									vars.game.fireCooldown++
+							if (vars.game.deathAnimationTick == 0) {
+								if (vars.game.fireCooldown > vars.game.save.fireRate) {
+									vars.game.fireCooldown = 0
+									playSound("Shot")
+									clone(Sprites.Rocket.x + (Sprites.Rocket.width / 2), Sprites.Rocket.y, "Bullet_Normal")
+								}
+								else {
+									if (vars.game.zoomAnimation == 0) {
+										vars.game.fireCooldown++
+									}
 								}
 							}
 						},
@@ -495,9 +1096,8 @@ Assets = {
 						me.anchor.setTo(0.5)
 						me.vars.tick = 0
 						me.y = me.y + Game.rnd.integerInRange(-vars.game.bulletSpread, vars.game.bulletSpread)
-						me.vars.hitSomething = false
 						enableTouching()
-						
+
 						cloneSprite(me.x, me.y, "Explosion", "Explosions", {
 							"size": 10,
 							"disableScreenshake": true
@@ -506,21 +1106,14 @@ Assets = {
 				],
 				"main": [
 					function() {
-						if (me.vars.hitSomething) {
-							deleteClone()
-							return
-						}
-					
+
 						me.x = me.x + 5
 						if ((me.vars.tick % 3) == 0) {
 							me.y = me.y + Game.rnd.integerInRange(-2, 2)
 						}
-						
-						if (touchingClones("Enemy_Rockets")) {
-							me.vars.hitSomething = true
-						}
-						
-						if (me.x > Game.world.width) {
+
+
+						if (me.x > Game.world.width + me.width) {
 							deleteClone()
 							return
 						}
@@ -530,7 +1123,8 @@ Assets = {
 					}
 				]
 			}
-		}, // Bullets
+		},
+		// Bullets
 		{
 			"scripts": {
 				"init": [
@@ -574,15 +1168,20 @@ Assets = {
 			"clonescripts": {
 				"init": [
 					function() {
+						me.anchor.setTo(0, 0.5)
+
 						me.vars.type = dataForClone
 						me.vars.hp = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["health"]
+
 						me.vars.hitFlash = 0
-						me.anchor.setTo(0, 0.5)
-						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["initScript"]()
-						
+						me.vars.fired = false
+						me.vars.fireTime = 0
+						me.vars.escaped = 0
+						me.vars.xVel = 0
+
 						if (me.y < Game.world.centerY) { // Check I'm not too high or low.
-							if (me.y - (me.height / 2) < 0) {
-								me.y = me.height / 2
+							if (me.y - (me.height / 2) - 10 < 0) {
+								me.y = (me.height / 2) + 10
 							}
 						}
 						else {
@@ -590,27 +1189,110 @@ Assets = {
 								me.y = Game.height - (me.height / 2)
 							}
 						}
-						
-						
+
+
 						enableTouching()
+
+						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["initScript"]()
 					}
 				],
 				"main": [
 					function() {
 						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["mainScript"]()
 						if (touchingClones("Bullet")) {
+
+							if (me.x < Sprites[touchInfo].x) { // Knock me back.
+								me.vars.xVel = me.vars.xVel + 2
+							}
+							else {
+								me.vars.xVel = me.vars.xVel - 2
+							}
+
+							deleteCloneByName(touchInfo) // Destroy the bullet that hit me.
+
 							me.vars.hp = me.vars.hp - 10
-							me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
-							me.vars.hitFlash = 10
+							if (me.vars.hitFlash == 0) {
+								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
+								me.vars.hitFlash = 10
+							}
 							if (me.vars.hp > 0) {
 								playSound("Hit")
 							}
 						}
+						if (! me.vars.fired) {
+							if (! touchingClones("Enemy_Rockets")) {
+								me.vars.escaped++
+							}
+							else {
+								me.vars.escaped = 0
+								me.vars.fireTime = me.vars.fireTime + 1
+								if (me.vars.fireTime > 50) {
+									me.vars.fired = true
+								}
+							}
+							if (me.vars.escaped > 1) {
+								me.vars.fired = true
+							}
+						}
+						var criteria = function(hit) {
+							return hit.vars.fired && hit.vars.hitFlash == 0
+						}
+						if (touchingClones("Enemy_Rockets", criteria) && me.vars.fired && me.vars.hitFlash == 0) {
+							var planetEnemies = vars.game.planets[vars.game.currentPlanet]["enemies"]
+							var hitRocket = Sprites[touchInfo]
+
+							me.vars.hp = me.vars.hp - planetEnemies[hitRocket.vars.type].damage // Damage me.
+							hitRocket.vars.hp = hitRocket.vars.hp - planetEnemies[me.vars.type].damage
+
+							if (me.x > hitRocket.x) { // Propel us away from each other.
+								me.vars.xVel = me.vars.xVel + 5
+								hitRocket.vars.xVel = hitRocket.vars.xVel - 5
+							}
+							else {
+								me.vars.xVel = me.vars.xVel - 5
+								hitRocket.vars.xVel = hitRocket.vars.xVel + 5
+							}
+
+							me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
+							hitRocket.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][hitRocket.vars.type]["cos"] + "_Hit")
+							me.vars.hitFlash = 10
+							hitRocket.vars.hitFlash = 10
+
+							if (me.width + me.height > hitRocket.width + hitRocket.height) {
+								if (me.width > me.height) {
+									var explosionWidth = me.width
+								}
+								else {
+									var explosionWidth = me.height
+								}
+							}
+							else {
+								if (hitRocket.width > hitRocket.height) {
+									var explosionWidth = hitRocket.width
+								}
+								else {
+									var explosionWidth = hitRocket.height
+								}
+							}
+
+
+							cloneSprite(me.x, me.y, "Explosion", "Explosions", {
+								"size": explosionWidth
+							})
+						}
+
+						me.x = me.x + me.vars.xVel
+						me.vars.xVel = me.vars.xVel * 0.8
+
 						if (me.vars.hitFlash > 0) {
 							me.vars.hitFlash--
 							if (me.vars.hitFlash == 0) {
 								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"])
 							}
+						}
+						if (me.x < Game.world.camera.x - me.width) {
+							deleteClone()
+							return
 						}
 						if (me.vars.hp <= 0) {
 							playSound("Boom")
@@ -633,7 +1315,8 @@ Assets = {
 					}
 				]
 			}
-		}, // Enemy spaceships
+		},
+		// Enemy spaceships
 		{
 			"scripts": {
 				"init": [
@@ -661,7 +1344,7 @@ Assets = {
 						if (! dataForClone["disableScreenshake"]) {
 							Game.camera.shake(dataForClone["size"] / 5000, 200)
 						}
-						
+
 						me.width = dataForClone["size"]
 						me.height = dataForClone["size"]
 						me.anchor.setTo(0.5)
@@ -684,7 +1367,8 @@ Assets = {
 					}
 				]
 			}
-		}, // Explosions
+		},
+		// Explosions
 		{
 			"scripts": {
 				"init": [
@@ -692,43 +1376,40 @@ Assets = {
 						"code": function() {
 							setHealth = function(health) {
 								vars.game.health = health
-								
+
 								var execute = Sprites["HealthBar"]
-								
+
 								execute.ctx.clearRect(0, 0, execute.width, execute.height)
-								
+								execute.ctx.lineCap = "round"
+
 								execute.ctx.lineWidth = 10
 								execute.ctx.strokeStyle = "#D9D9D9"
 								execute.ctx.beginPath()
 								execute.ctx.moveTo(10, execute.height / 2)
 								execute.ctx.lineTo(execute.width - 10, execute.height / 2)
 								execute.ctx.stroke()
-								
-								execute.ctx.lineWidth = 5
-								execute.ctx.strokeStyle = "red"
-								execute.ctx.beginPath()
-								execute.ctx.moveTo(5, execute.height / 2)
-								execute.ctx.lineTo(execute.width - 5, execute.height / 2)
-								execute.ctx.stroke()
-								
-								execute.ctx.fillRect(0, 0, execute.width, execute.height)
-								
-								execute.update()
+
+								if (((vars.game.health / vars.game.maxHealth) * 700) - 10 > 5) {
+									execute.ctx.lineWidth = 5
+									execute.ctx.strokeStyle = "red"
+									execute.ctx.beginPath()
+									execute.ctx.moveTo(10, execute.height / 2)
+									execute.ctx.lineTo(((vars.game.health / vars.game.maxHealth) * 700) - 10, execute.height / 2)
+									execute.ctx.stroke()
+								}
+
 							}
-							//setHealth(50)
-							
-							me.ctx.fillStyle = "red"
-							me.ctx.fillRect(0, 0, me.width, me.height)
-							
-							me.dirty = true
-							
+							setHealth(vars.game.health)
+
 						},
 						"stateToRun": ["game"]
 					}
 				],
 				"main": [
 					{
-						"code": null,
+						"code": function() {
+							me.dirty = true
+						},
 						"stateToRun": ["game"]
 					}
 				]
@@ -737,7 +1418,8 @@ Assets = {
 			"type": "canvas",
 			"width": 700,
 			"height": 10
-		}, // Health bar
+		},
+		// Health bar
 		{
 			"scripts": {
 				"init": [
@@ -746,34 +1428,39 @@ Assets = {
 						"stateToRun": ["game"]
 					}
 				],
-				"main": [
-					{
-						"code": null,
-						"stateToRun": ["game"]
-					}
-				]
+				"main": []
 			},
 			"id": "HealthBar_Frame",
-			"x": 0,
+			"x": 100,
 			"y": 0,
 			"type": "canvasFrame",
 			"bitmapID": "HealthBar",
 			"fixedToCamera": true
-		} // Health bar sprite
+		}
+		// Health bar sprite
 	],
 	"scripts": {
 		"init": [
 			{
 				"code": function() {
 					playSound("Menu_Music", true)
-							
+
 					Game.world.setBounds(0, 0, Game.width * vars.menu.backgroundSize, Game.height * vars.menu.backgroundSize)
-					Game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL
-					Game.scale.pageAlignHorizontally = true
-					Game.scale.pageAlignVertically = true
 				},
-				"stateToRun": ["menu", 0] 
+				"stateToRun": ["menu", 0]
 			},
+
+			{
+				"code": function() {
+					playSound("Menu_Music", true)
+
+					Game.world.setBounds(0, 0, Game.width, Game.height)
+					Game.camera.x = 0
+					Game.camera.y = 0
+				},
+				"stateToRun": ["menu", 1]
+			},
+
 			{
 				"code": function() {
 					Game.world.setBounds(0, 0, Game.width, Game.height)
@@ -784,19 +1471,19 @@ Assets = {
 						playSound("Game_Music", true, "repeat")
 					})
 				},
-				"stateToRun": ["game"] 
+				"stateToRun": ["game"]
 			}
 		],
 		"main": [
 			{
 				"code":	function() {
 					vars.menu.hoverMessage = ""
-				
+
 					Game.camera.x = inX * vars.menu.backgroundSize
 					Game.camera.y = inY * vars.menu.backgroundSize
 					if (vars.menu.logoBob[0] <= 0 - vars.menu.logoBob[2]) {
 						vars.menu.logoBob[1] = 0
-					}		
+					}
 					if (vars.menu.logoBob[0] >= vars.menu.logoBob[2]) {
 						vars.menu.logoBob[1] = 1
 					}
@@ -806,8 +1493,6 @@ Assets = {
 					else {
 						vars.menu.logoBob[0] = vars.menu.logoBob[0] - (1 / 5)
 					}
-					
-					Sprites["FPS_Text"].setText("FPS: " + currentFPS)
 				},
 				"stateToRun": [["menu", 0], "before"]
 			},
@@ -825,18 +1510,39 @@ Assets = {
 						vars.menu.clickCooldown = false
 						vars.menu.dragging = false
 					}
-				
+
 					Sprites["Hover_Text"].setText(vars.menu.hoverMessage)
 				},
 				"stateToRun": [["menu", 0], "after"]
 			},
 			{
 				"code": function() {
-					Sprites["FPS_Text"].setText("FPS: " + currentFPS)
+					vars.menu.hoverMessage = ""
+
+					if (vars.menu.logoBob[0] <= 0 - vars.menu.logoBob[2]) {
+						vars.menu.logoBob[1] = 0
+					}
+					if (vars.menu.logoBob[0] >= vars.menu.logoBob[2]) {
+						vars.menu.logoBob[1] = 1
+					}
+					if (vars.menu.logoBob[1] == 0) {
+						vars.menu.logoBob[0] = vars.menu.logoBob[0] + (1 / 5)
+					}
+					else {
+						vars.menu.logoBob[0] = vars.menu.logoBob[0] - (1 / 5)
+					}
 				},
-				"stateToRun": [["game"], "after"]
+				"stateToRun": [["menu", 1], "before"]
+			},
+			{
+				"code": function() {
+					Sprites["Hover_Text"].setText(vars.menu.hoverMessage)
+				},
+				"stateToRun": [["menu", 1], "after"]
 			}
 		]
+	},
+	"mainScript": function() {
+		Sprites["FPS_Text"].setText("FPS: " + currentFPS)
 	}
 }
-

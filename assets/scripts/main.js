@@ -1,6 +1,8 @@
 // TODO:
-//	Screen shake 
-//	Explosions
+
+// Health bars on enemies?
+
+cloneCount = 0
 
 
 Loaded = {
@@ -39,7 +41,50 @@ var width = 800
 var height = 450
 var currentFPS = "?"
 
-Game = new Phaser.Game(width, height, Phaser.AUTO, "game", null, false, false)
+function testRenderers() {
+	console.log("Running speedtest...")
+	Game = new Phaser.Game(width, height, Phaser.AUTO, "game", null, false, false)
+	testTick = 0
+	Game.state.add("Test", {
+		"preload": function() {
+			Game.load.image("test", "assets/imgs/" + Assets["imgs"][0]["src"])
+		},
+		"create": function() {
+			var i = 0
+			while (i < 500) {
+				var sprite = Game.add.sprite(Game.rnd.integerInRange(0, Game.width), Game.rnd.integerInRange(0, Game.height), "test")
+				sprite.width = 500
+				sprite.height = 500
+				i++
+			}
+		},
+		"update": function() {
+			if (testTick == 30) {
+				console.log("AUTO achieved " + currentFPS + " FPS.")
+				if (currentFPS < 50) {
+					mode = Phaser.CANVAS
+					console.log("FPS is low, WebGL is slow. Switching to canvas mode...")
+				}
+				else {
+					mode = Phaser.AUTO
+					console.log("FPS is fine, AUTO is fine.")
+				}
+
+				console.log("\n \n")
+
+				setTimeout(function() {
+					Game.destroy()
+					Game = new Phaser.Game(width, height, mode, "game", null, false, false)
+					setup()
+				}, 0)
+			}
+			testTick++
+			currentFPS = fpsCalc.getFPS()
+		}
+	})
+	Game.state.start("Test")
+}
+testRenderers()
 
 Sprites = {}
 SpritesIndex = {}
@@ -54,6 +99,10 @@ mainResetScriptTimes = {}
 cloneMainScripts = {}
 cloneResetScripts = {}
 spriteCloneIds = {}
+time = "?"
+touchscreen = window.ontouchstart !== undefined
+functionForClone = null
+autoStart = true
 
 currentFade = {
 	"active": false,
@@ -61,9 +110,79 @@ currentFade = {
 	"newState": null
 }
 
+finishLoading = function() {
+	var i = 0
+	for (i in Assets["snds"]) {
+		if (Assets["snds"][i]["markers"] !== undefined) {
+			var audio = Game.add.audio(Assets["snds"][i]["id"])
+			var c = 0
+			for (c in Assets["snds"][i]["markers"]) {
+				var a = Assets["snds"][i]["markers"][c]
+				audio.addMarker(a["id"], a["start"], a["end"] - a["start"], 1, a["repeat"])
+			}
+			Loaded["snds"][Assets["snds"][i]["id"]] = audio
+		}
+		else {
+			Loaded["snds"][Assets["snds"][i]["id"]] = Game.add.audio(Assets["snds"][i]["id"])
+		}
+	}
+	loadingText.destroy()
+
+	fadeDot = Game.add.sprite(0, 0, "Fade_Dot")
+	fadeDot.width = Game.world.width
+	fadeDot.height = Game.world.height
+	fadeDot.fixedToCamera = true
+	fadeDot.visible = false
+
+	create()
+}
 
 GameState = {
+	"preload": finishLoading,
+	"update": main
+}
+
+LoadingState = {
 	"preload": function() {
+		Game.load.onLoadComplete.add(function() {
+			setTimeout(function() {
+				if (touchscreen) {
+					loadingText.setText("Tap to start.")
+				}
+				else {
+					loadingText.setText("Click to start.")
+				}
+				waitDown = false
+				wait = setInterval(function() {
+					if ((! Game.input.activePointer.isDown) && waitDown || autoStart) {
+						Game.state.start("GameState")
+
+						setTimeout(function() {
+							if (currentFPS <= 31) {
+								GameFrame.parentNode.removeChild(GameFrame)
+								alert("Your browser seems to be running the main script at half the speed it should. This will mean the game won't work properly. \n Try a more up to date browser or maybe another device.")
+							}
+						}, 2000)
+						clearInterval(wait)
+					}
+					if (Game.input.activePointer.isDown) {
+						waitDown = true
+					}
+				}, 30)
+			}, 500)
+		}, Game)
+		Game.stage.backgroundColor = "#000000"
+		loadingText = Game.add.text(Game.world.centerX, Game.world.centerY, "Loading assets...", {
+			"font": "50px Arial",
+			"fill": "#FFFFFF",
+		})
+		loadingText.anchor.setTo(0.5)
+		GameFrame.hidden = false
+		Game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL
+		Game.scale.pageAlignHorizontally = true
+		Game.scale.pageAlignVertically = true
+	},
+	"create": function() {
 		Game.load.image("Fade_Dot", "assets/imgs/fade.png")
 		var i = 0
 		for (i in Assets["imgs"]) {
@@ -73,45 +192,40 @@ GameState = {
 		for (i in Assets["snds"]) {
 			Game.load.audio(Assets["snds"][i]["id"], "assets/sounds/" + Assets["snds"][i]["src"])
 		}
-	},
-	"create": function() {
-		var i = 0
-		for (i in Assets["snds"]) {
-			if (Assets["snds"][i]["markers"] !== undefined) {
-				var audio = Game.add.audio(Assets["snds"][i]["id"])
-				var c = 0
-				for (c in Assets["snds"][i]["markers"]) {
-					var a = Assets["snds"][i]["markers"][c]
-					audio.addMarker(a["id"], a["start"], a["end"] - a["start"], 1, a["repeat"])
-				}
-				Loaded["snds"][Assets["snds"][i]["id"]] = audio
-			}
-			else {
-				Loaded["snds"][Assets["snds"][i]["id"]] = Game.add.audio(Assets["snds"][i]["id"])	
-			}
-		}
-		create()
-
-		fadeDot = Game.add.sprite(0, 0, "Fade_Dot")
-		fadeDot.width = Game.world.width
-		fadeDot.height = Game.world.height
-		fadeDot.visible = false
-
-		GameFrame.hidden = false
-	},
-	"update": main
+		Game.load.start()
+	}
 }
-Game.state.add("GameState", GameState)
-Game.state.start("GameState")
 
+function deleteCloneByName(name) {
+	if (Sprites[name] !== undefined) {
+		cloneCount--
+		Sprites[name].destroy()
+
+		var splitName = name.split("#")
+		spriteCloneIds[splitName[0]][splitName[1]] = undefined
+	}
+}
+
+function setup() {
+	Game.state.add("Load", LoadingState)
+	Game.state.add("GameState", GameState)
+	Game.state.start("Load")
+}
+
+function is_defined(x) {
+	return x != undefined
+}
+
+function removeUndefined(ob) {
+	return ob.filter(is_defined)
+}
 
 function preload() {
-	Game.stage.backgroundColor = "#000000"
-	loadingText = Game.add.text(Game.world.centerX, Game.world.centerY, "Loading assets...", {
-		"font": "50px Arial", 
-		"fill": "#FFFFFF",
-	})
-	loadingText.anchor.setTo(0.5)
+
+}
+
+function updateFrame(frameId, bitmap) {
+	Sprites[frameId].loadTexture(Sprites[bitmap])
 }
 
 function playSound(id, loop, marker, onStop) {
@@ -122,14 +236,15 @@ function playSound(id, loop, marker, onStop) {
 		Loaded["snds"][id].loop = false
 	}
 	if (onStop !== undefined) {
-		Loaded["snds"][id].onStop.addOnce(onStop, this)
+		Loaded["snds"][id].onStop.addOnce(onStop)
 	}
-	
+
+	Loaded["snds"][id].currentTime = 0
 	Loaded["snds"][id].play(marker)
 }
 
 function stopSound(id) {
-	Loaded["snds"][id].pause()
+	Loaded["snds"][id].stop()
 }
 
 function beginFade(speed, newState, stoptime) {
@@ -140,6 +255,20 @@ function beginFade(speed, newState, stoptime) {
 		"newState": newState
 	}
 	fadeDot.visible = true
+}
+
+function move(dis) {
+	var rad = Game.math.radToDeg(me.angle)
+	me.x = me.x + Math.cos(rad) * dis
+	me.y = me.y + Math.sin(rad) * dis
+}
+
+function getAngleBetweenSprites(sprite1, sprite2) {
+	return Game.math.radToDeg(Game.physics.arcade.angleBetween(sprite1, sprite2))
+}
+
+function moveToSprite(sprite1, sprite2, speed) {
+	Game.physics.arcade.moveToObject(sprite1, sprite2, speed)
 }
 
 function filter(r, g, b, a) {
@@ -159,22 +288,45 @@ function assignIdForClone(sprite) {
 		}
 	}
 	return spriteCloneIds[sprite].length
-} 
-
-function clone(x, y, imgId, data) {
-	cloneSprite(x, y, imgId, myJSON.id, data)
 }
 
-function cloneSprite(x, y, imgId, sprite, data) {
+function clone(x, y, imgId, data, text, settings, width, height, fixedToCamera, bitmapID) {
+	return cloneSprite(x, y, imgId, myJSON.id, data, text, settings, width, height, fixedToCamera, bitmapID)
+}
+
+function cloneSprite(x, y, imgId, sprite, data, text, settings, width, height, fixedToCamera, bitmapID) {
+	cloneCount++
+
 	var id = assignIdForClone(sprite)
 	var meWas = me
 	var myIDWas = myID
-	
-	me = Game.add.sprite(x, y, imgId)
+
+	internal.createSprite({
+		"x": x,
+		"y": y,
+		"cos": imgId,
+		"bitmapID": imgId,
+		"type": Assets.sprites[Sprites[sprite].JSONID].type,
+		"text": text,
+		"settings": settings,
+		"width": width,
+		"height": height,
+		"fixedToCamera": fixedToCamera,
+		"bitmapID": bitmapID
+	})
 	me.vars = {}
 	me.cloneID = id
 	me.cloneOf = sprite
 	dataForClone = data
+
+	var response = null
+	if (functionForClone != undefined) {
+		if (functionForClone[1] == "before") {
+			var response = functionForClone[0]()
+			functionForClone = null
+		}
+	}
+
 	spriteCloneIds[sprite][id] = sprite + "#" + id
 	Sprites[sprite + "#" + id] = me
 	var cloneScripts = Assets["sprites"][SpritesIndex[sprite]]["clonescripts"]
@@ -188,9 +340,17 @@ function cloneSprite(x, y, imgId, sprite, data) {
 			}
 		}
 	}
-	
+
+	if (functionForClone != undefined) {
+		if (functionForClone[1] == "after") {
+			var response = functionForClone[0]()
+			functionForClone = null
+		}
+	}
+
 	me = meWas
 	myID = myIDWas
+	return response
 }
 
 function getDir(x, y) {
@@ -218,37 +378,56 @@ function glideTo(x, y, glide) {
 
 function deleteClone(id, spriteID) {
 	if (id === undefined) {
-		var ID = myID 
+		var ID = myID
 	}
 	else {
 		var ID = id
 	}
 	if (spriteID === undefined) {
-		var SID = myJSON.id 
+		var SID = myJSON.id
 	}
 	else {
 		var SID = spriteID
 	}
-	
-	Sprites[spriteCloneIds[SID][ID]].destroy()
-	spriteCloneIds[SID][ID] = undefined
+
+	if (Sprites[spriteCloneIds[SID][ID]] !== undefined) {
+		cloneCount--
+
+		Sprites[spriteCloneIds[SID][ID]].destroy()
+		spriteCloneIds[SID][ID] = undefined
+	}
 }
 
 function enableTouching() {
 	Game.physics.enable(me, Phaser.Physics.ARCADE)
+	me.body.sensor = true
 	me.body.immovable = true
 }
 
-function touchingSprite(sprite) {
-	return Game.physics.arcade.collide(sprite, me, null, null, Game)
+function touchingSprite(sprite, criteria) {
+	if (criteria != undefined) {
+		if (Game.physics.arcade.collide(sprite, me, null, null, Game)) {
+			if (criteria(sprite)) {
+				return true
+			}
+		}
+		return false
+	}
+	else {
+		return Game.physics.arcade.collide(sprite, me, null, null, Game)
+	}
 }
 
-function touchingClones(sprite) {
+function touchingClones(sprite, criteria) {
 	var i = 0
+	touchInfo = ""
 	for (i in spriteCloneIds[sprite]) {
 		if (spriteCloneIds[sprite][i] !== undefined) {
-			if (touchingSprite(Sprites[spriteCloneIds[sprite][i]])) {
-				return true
+			if (sprite != me.cloneOf | i != me.cloneID) {
+				if (touchingSprite(Sprites[spriteCloneIds[sprite][i]], criteria)) {
+					touchInfo = spriteCloneIds[sprite][i]
+					return true
+				}
 			}
 		}
 	}
@@ -257,12 +436,12 @@ function touchingClones(sprite) {
 
 function deleteAllClonesOfSprite(spriteID) {
 	if (spriteID === undefined) {
-		var SID = myJSON.id 
+		var SID = myJSON.id
 	}
 	else {
 		var SID = spriteID
 	}
-	
+
 	var i = 0
 	for (i in spriteCloneIds[SID]) {
 		if (spriteCloneIds[SID][i] !== undefined) {
@@ -301,6 +480,39 @@ function reset() {
 	}
 }
 
+var internal = {}
+
+
+internal.createSprite = function(ob) {
+	if (ob["type"] == "sprite" || ob["type"] == undefined) {
+		me = Game.add.sprite(ob["x"], ob["y"], ob["cos"])
+		me.id = ob.id
+		spriteCloneIds[ob["id"]] = []
+	}
+	else {
+		if (ob["type"] == "text") {
+			me = Game.add.text(ob["x"], ob["y"], ob["text"], ob["settings"])
+			me.smoothed = true
+			spriteCloneIds[ob["id"]] = []
+		}
+		else {
+			if (ob["type"] == "canvas") { // Help from https://stackoverflow.com/questions/46695098/how-can-i-fix-bitmapdata-to-the-camera-in-phaser/46696512#46696512
+				me = Game.add.bitmapData(ob["width"], ob["height"])
+				spriteCloneIds[ob["id"]] = []
+			}
+			else {
+				if (ob["type"] == "canvasFrame") { // Help from https://stackoverflow.com/questions/46695098/how-can-i-fix-bitmapdata-to-the-camera-in-phaser/46696512#46696512
+					me = Game.add.sprite(ob["x"], ob["y"], Sprites[ob["bitmapID"]])
+					if (ob["fixedToCamera"]) {
+						me.fixedToCamera = true
+					}
+					spriteCloneIds[ob["id"]] = []
+				}
+			}
+		}
+	}
+}
+
 function create() {
 	Game.physics.startSystem(Phaser.Physics.ARCADE)
 	Game.input.addMoveCallback(function(){}, this)
@@ -311,32 +523,10 @@ function create() {
 		var c = Assets["sprites"][i]
 		SpritesIndex[c["id"]] = i
 		myJSON = c
-		if (c["type"] == "sprite" || c["type"] == undefined) {
-			me = Game.add.sprite(c["x"], c["y"], c["cos"])
-			me.id = myJSON.id
-			spriteCloneIds[c["id"]] = []
-		}
-		else {
-			if (c["type"] == "text") {
-				me = Game.add.text(c["x"], c["y"], c["text"], c["settings"])
-				me.smoothed = true
-			}
-			else {
-				if (c["type"] == "canvas") { // Help from https://stackoverflow.com/questions/46695098/how-can-i-fix-bitmapdata-to-the-camera-in-phaser/46696512#46696512
-					me = Game.add.bitmapData(c["width"], c["height"])
-					me.addToWorld()
-				}
-				else {
-					if (c["type"] == "canvasFrame") { // Help from https://stackoverflow.com/questions/46695098/how-can-i-fix-bitmapdata-to-the-camera-in-phaser/46696512#46696512
-						me = Game.add.sprite(c["x"], c["y"], Sprites[c["bitmapID"]])
-						
-						if (c["fixedToCamera"]) {
-							me.fixedToCamera = true
-						}
-					}
-				}
-			}
-		}
+
+		internal.createSprite(myJSON)
+		me.JSONID = i
+
 		me.vars = {}
 		if (! (c["scripts"]["main"] === undefined || c["scripts"]["main"] === null)) {
 			if (c["scripts"]["main"].length > 0) {
@@ -360,7 +550,7 @@ function create() {
 				}
 			}
 		}
-		
+
 		if (c["clonescripts"] !== undefined) {
 			if (! (c["clonescripts"]["main"] === undefined || c["clonescripts"]["main"] === null)) {
 				if (c["clonescripts"]["main"].length > 0) {
@@ -385,12 +575,11 @@ function create() {
 				}
 			}
 		}
-		
 
 		Sprites[c["id"]] = me
 	}
-	
-	
+
+
 	var i = 0
 	for (i in Assets["scripts"]["main"]) {
 		var c = Assets["scripts"]["main"][i]
@@ -399,7 +588,7 @@ function create() {
 		}
 		mainScriptTimes[c["stateToRun"][1]][c["stateToRun"][0].toString()][mainScriptTimes[c["stateToRun"][1]][c["stateToRun"][0]].length] = i
 	}
-	
+
 	var i = 0
 	for (i in Assets["scripts"]["init"]) {
 		var c = Assets["scripts"]["init"][i]
@@ -408,26 +597,30 @@ function create() {
 		}
 		mainResetScriptTimes[c["stateToRun"].toString()][mainResetScriptTimes[c["stateToRun"].toString()].length] = i
 	}
-	
+
 	reset()
+
+	if (Assets["initScript"] != undefined) {
+		Assets["initScript"]()
+	}
 }
 
 function main() {
 	inX = Game.input.x
 	inY = Game.input.y
-	
+
 	if (state != stateWas) {
 		reset()
 		stateWas = state
 	}
-	
+
 	var i = 0
 	for (i in mainScriptTimes["before"][state.toString()]) {
 		var c = mainScriptTimes["before"][state.toString()][i]
 		var c = Assets["scripts"]["main"][c]
 		c["code"]()
 	}
-	
+
 	var cloneScriptsRun = []
 	var i = 0
 	for (i in scriptTimes[state.toString()]) {
@@ -440,7 +633,7 @@ function main() {
 		if (! (c["code"] === null || c["code"] === undefined)) {
 			c["code"]()
 		}
-		
+
 		var a = 0
 		for (a in spriteCloneIds[myJSON.id]) {
 			if (Sprites[spriteCloneIds[myJSON.id][a]] !== undefined) {
@@ -453,14 +646,14 @@ function main() {
 			}
 		}
 	}
-	
+
 	var i = 0
 	for (i in mainScriptTimes["after"][state.toString()]) {
 		var c = mainScriptTimes["after"][state.toString()][i]
 		var c = Assets["scripts"]["main"][c]
 		c["code"]()
 	}
-	
+
 	if (currentFade["speed"] !== 0) {
 		if (currentFade["tick"] >= (100 / currentFade["speed"]) + currentFade["stopTime"]) {
 			fadeDot.alpha = 1 - (((currentFade["tick"] - currentFade["stopTime"] - (100 / currentFade["speed"])) * currentFade["speed"]) / 100)
@@ -485,13 +678,10 @@ function main() {
 		currentFade["tick"]++
 		fadeDot.bringToTop()
 	}
-	
-	currentFPS = fpsCalc.getFPS()
-}
 
-setTimeout(function() {
-	if (currentFPS <= 31) {
-		GameFrame.parentNode.removeChild(GameFrame)
-		alert("Your browser seems to be running the main script at half the speed it should. This will mean the game won't work properly. \n Try a more up to date browser or maybe another device.")
+	currentFPS = fpsCalc.getFPS()
+
+	if (Assets["mainScript"] != undefined) {
+		Assets["mainScript"]()
 	}
-}, 2000)
+}
