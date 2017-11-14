@@ -106,6 +106,15 @@ Assets = {
 			"src": "arrow_right_hover.png"
 		},
 		{
+			"id": "Warp_Button",
+			"src": "warp_button.png"
+		},
+		{
+			"id": "Warp_Button_Hover",
+			"src": "warp_button_hover.png"
+		},
+
+		{
 			"id": "Planet_1",
 			"src": "planet_1.png"
 		}
@@ -251,6 +260,8 @@ Assets = {
 										vars.game.save.fireRate = 30
 										vars.game.bulletSpread = 10
 										vars.game.maxHealth = 50
+
+										vars.game.currentPlanet = 0
 
 
 										beginFade(5, ["game"], 	0)
@@ -473,9 +484,34 @@ Assets = {
 						me.vars.ID = dataForClone[1]
 						me.vars.parent = Sprites[dataForClone[2]]
 						me.vars.hover = false
-						me.vars.click = false
+						me.vars.clicked = false
+						me.vars.click = 0
 
 						me.inputEnabled = true
+
+						me.events.onInputOver.add(function(sprite) {
+							me = sprite
+
+							playSound("Hover_Button")
+
+							var execute = me.vars.parent
+							if (! execute.vars.selected) {
+								execute.addColor("#BFBFBF", 0)
+							}
+						})
+						me.events.onInputOut.add(function(sprite) {
+							me = sprite
+
+
+						})
+						me.events.onInputDown.add(function(sprite) {
+							me = sprite
+
+							playSound("Click_Button")
+
+							me.vars.clicked = true
+							vars.menu.changeTab(me.vars.ID)
+						})
 
 						me.vars.normalY = me.y
 					}
@@ -485,37 +521,20 @@ Assets = {
 
 						me.y = vars.menu.logoBob[0] + me.vars.normalY
 
-						if (me.input.pointerOver()) {
-							if (! me.vars.hover) {
-								playSound("Hover_Button")
-
-								me.vars.hover = true
-
+						if (me.vars.click == 1) {
+							if (! me.vars.clicked) {
 								var execute = me.vars.parent
-								if (! execute.vars.selected) {
-									execute.addColor("#BFBFBF", 0)
-								}
+								execute.vars.selected = false
+								execute.addColor("black", 0)
+								me.vars.click = 0
 							}
-							if (Game.input.activePointer.isDown && (! me.vars.click)) {
-								playSound("Click_Button")
-
-								me.vars.click = true
-								vars.menu.changeTab(me.vars.ID)
-							}
+							me.vars.click = 0
+						}
+						if (Game.input.activePointer.isDown) {
+							me.vars.click = 1
 						}
 						else {
-							if (me.vars.hover) {
-								me.vars.hover = false
-
-								var execute = me.vars.parent
-								if (! execute.vars.selected) {
-									execute.addColor("black", 0)
-								}
-							}
-						}
-
-						if (! Game.input.activePointer.isDown) {
-							me.vars.click = false
+							me.vars.clicked = false
 						}
 					}
 				]
@@ -544,7 +563,7 @@ Assets = {
 											"selected": 0,
 											"imgs": planetImages,
 											"x": 400,
-											"y": 250,
+											"y": 220,
 											"initfunc": function() {
 												me.width = 300
 												me.height = 300
@@ -560,7 +579,7 @@ Assets = {
 												"Arrow_Left"
 											],
 											"x": 200,
-											"y": 250,
+											"y": 220,
 											"initfunc": function() {
 												me.scale.setTo(10)
 
@@ -592,7 +611,7 @@ Assets = {
 												"Arrow_Right"
 											],
 											"x": 600,
-											"y": 250,
+											"y": 220,
 											"initfunc": function() {
 												me.scale.setTo(10)
 
@@ -616,11 +635,45 @@ Assets = {
 											"hoverend": function() {
 												me.loadTexture(me.vars.normalImg)
 											}
+										},
+										{
+											"type": "button",
+											"selected": 0,
+											"imgs": [
+												"Warp_Button"
+											],
+											"x": 400,
+											"y": 400,
+											"hoverMessage": "Warp to plannet",
+											"initfunc": function() {
+												me.scale.setTo(3)
+
+												me.vars.normalImg = me.key
+											},
+											"mainfunc": function() {},
+											"clickfunc": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+
+												var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+												vars.game.currentPlanet = plannetSprite.selected
+
+												stopSound("Menu_Music")
+												beginFade(5, ["game"], 0)
+											},
+											"hoverstart": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+											},
+											"hoverend": function() {
+												me.loadTexture(me.vars.normalImg)
+											}
 										}
 									]
 								},
 								{
-									"text": "Weapons"
+									"text": "Weapons",
+									"content": [
+
+									]
 								},
 								{
 									"text": "Defence"
@@ -787,11 +840,34 @@ Assets = {
 						me.vars.normalY = me.y
 						me.vars.selectedImgWas = me.vars.JSON.selected
 						if (me.vars.JSON.type == "button") {
-							me.vars.clickCooldown = false
-							me.vars.hoverCooldown = false
 							me.vars.hovering = false
+							me.vars.click = 0
+							me.vars.clicked = false
 
 							me.inputEnabled = true
+
+							me.events.onInputOver.add(function(sprite) {
+								me = sprite
+
+								playSound("Hover_Button")
+
+								me.vars.JSON.hoverstart()
+								me.vars.hovering = true
+							})
+							me.events.onInputOut.add(function(sprite) {
+								me = sprite
+
+								me.vars.JSON.hoverend()
+								me.vars.hovering = false
+							})
+							me.events.onInputDown.add(function(sprite) {
+								me = sprite
+
+								playSound("Click_Button")
+
+								me.vars.clicked = true
+								me.vars.JSON.clickfunc()
+							})
 						}
 
 						me.vars.JSON.initfunc()
@@ -806,33 +882,22 @@ Assets = {
 							me.loadTexture(me.vars.JSON.imgs[me.vars.JSON.selected])
 						}
 
+
 						if (me.vars.JSON.type == "button") {
-							if (me.input.pointerOver()) {
-								if (Game.input.activePointer.isDown && (! me.vars.clickCooldown)) {
-									me.vars.clickCooldown = true
-									playSound("Click_Button")
-									me.vars.JSON.clickfunc()
+							if (me.vars.click == 1) {
+								if (! me.vars.clicked) {
+									me.vars.JSON.hoverend()
 								}
-								if (! Game.input.activePointer.isDown) {
-									if (! me.vars.hoverCooldown) {
-										playSound("Hover_Button")
-										me.vars.hoverCooldown = true
-										me.vars.JSON.hoverstart()
-										me.vars.hovering = true
-									}
+								me.vars.click = 0
+							}
+							if (Game.input.activePointer.isDown) {
+								if (me.vars.click == 0) {
+									me.vars.click = 1
 								}
 							}
 							else {
-								if (me.vars.hoverCooldown) {
-									me.vars.hoverCooldown = false
-									me.vars.JSON.hoverend()
-									me.vars.hovering = false
-								}
+								me.vars.clicked = false
 							}
-							if (! Game.input.activePointer.isDown) {
-								me.vars.clickCooldown = false
-							}
-
 							if (me.vars.hovering) {
 								if (me.vars.JSON.hoverMessage != undefined) {
 									vars.menu.hoverMessage = me.vars.JSON.hoverMessage
@@ -1130,7 +1195,6 @@ Assets = {
 				"init": [
 					{
 						"code": function() {
-							vars.game.currentPlanet = 0
 							vars.game.spawnTick = 0
 							vars.game.spawnRate = 200
 						},
@@ -1230,7 +1294,7 @@ Assets = {
 									me.vars.fired = true
 								}
 							}
-							if (me.vars.escaped > 1) {
+							if (me.vars.escaped > 0) {
 								me.vars.fired = true
 							}
 						}
@@ -1241,8 +1305,10 @@ Assets = {
 							var planetEnemies = vars.game.planets[vars.game.currentPlanet]["enemies"]
 							var hitRocket = Sprites[touchInfo]
 
-							me.vars.hp = me.vars.hp - planetEnemies[hitRocket.vars.type].damage // Damage me.
-							hitRocket.vars.hp = hitRocket.vars.hp - planetEnemies[me.vars.type].damage
+							var bonusDamage = 2 // Extra damage because it's hard to get them to crash into each other.
+
+							me.vars.hp = me.vars.hp - (planetEnemies[hitRocket.vars.type].damage * bonusDamage) // Damage me.
+							hitRocket.vars.hp = hitRocket.vars.hp - (planetEnemies[me.vars.type].damage * bonusDamage)
 
 							if (me.x > hitRocket.x) { // Propel us away from each other.
 								me.vars.xVel = me.vars.xVel + 5

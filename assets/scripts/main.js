@@ -1,5 +1,6 @@
 // TODO:
 
+// Use buttons instead of sprites?
 // Health bars on enemies?
 
 cloneCount = 0
@@ -15,7 +16,7 @@ document.bgColor = "black"
 GameFrame = getEl("game")
 window.addEventListener("touchmove", function(e) {
 	e.preventDefault()
-}, false)
+}, true)
 
 window.onerror = function (msg, url, lineNo, columnNo, error) { // From https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
     var string = msg.toLowerCase();
@@ -172,7 +173,7 @@ LoadingState = {
 			}, 500)
 		}, Game)
 		Game.stage.backgroundColor = "#000000"
-		loadingText = Game.add.text(Game.world.centerX, Game.world.centerY, "Loading assets...", {
+		loadingText = Game.add.text(Game.world.centerX, Game.world.centerY, "Loading... 0%", {
 			"font": "50px Arial",
 			"fill": "#FFFFFF",
 		})
@@ -184,14 +185,24 @@ LoadingState = {
 	},
 	"create": function() {
 		Game.load.image("Fade_Dot", "assets/imgs/fade.png")
+		numberOfAssets = 1
+		loaded = 0
+
 		var i = 0
 		for (i in Assets["imgs"]) {
 			Game.load.image(Assets["imgs"][i]["id"], "assets/imgs/" + Assets["imgs"][i]["src"])
+			numberOfAssets++
 		}
 		var i = 0
 		for (i in Assets["snds"]) {
 			Game.load.audio(Assets["snds"][i]["id"], "assets/sounds/" + Assets["snds"][i]["src"])
+			numberOfAssets++
 		}
+
+		Game.load.onFileComplete.add(function() {
+			loaded++
+			loadingText.setText("Loading... " + Math.floor((loaded / numberOfAssets) * 100) + "%")
+		})
 		Game.load.start()
 	}
 }
