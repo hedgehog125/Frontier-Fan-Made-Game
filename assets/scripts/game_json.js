@@ -1,3 +1,23 @@
+// TODO:
+
+// For first release...
+
+// Upgrades and menu.
+// Health bars on enemies.
+// Add bosses into the API.
+// Create a boss for the first planet.
+// Settings menu. (not that important, but has to be done)
+// Continue game button (not that important, but has to be done)
+
+// For later releases...
+
+// Add more planets. <==
+// Create the minigame for the bosses.
+// Different spaceships. (possibly should be in first release).
+
+
+
+
 Assets = {
 	"imgs": [
 		// Main menu.
@@ -9,13 +29,6 @@ Assets = {
 		{
 			"id": "Logo",
 			"src": "title.png"
-		},
-
-		// Other.
-
-		{
-			"id": "Fade",
-			"src": "fade.png"
 		},
 
 		// Game.
@@ -81,6 +94,7 @@ Assets = {
 
 		// Upgrades / world selector.
 
+		// Tabs
 		{
 			"id": "Tab",
 			"src": "tab.png"
@@ -89,6 +103,7 @@ Assets = {
 			"id": "Tab_End",
 			"src": "tab_end.png"
 		},
+		// GUI
 		{
 			"id": "Arrow_Left",
 			"src": "arrow_left.png"
@@ -113,6 +128,76 @@ Assets = {
 			"id": "Warp_Button_Hover",
 			"src": "warp_button_hover.png"
 		},
+		// Upgrades
+		{
+			"id": "Upgrade_Attack_0",
+			"src": "upgrade_attack_0.png"
+		},
+		{
+			"id": "Upgrade_Attack_1",
+			"src": "upgrade_attack_1.png"
+		},
+		{
+			"id": "Upgrade_Attack_2",
+			"src": "upgrade_attack_2.png"
+		},
+		{
+			"id": "Upgrade_Attack_3",
+			"src": "upgrade_attack_3.png"
+		},
+		{
+			"id": "Upgrade_Attack_4",
+			"src": "upgrade_attack_4.png"
+		},
+		{
+			"id": "Upgrade_Attack_5",
+			"src": "upgrade_attack_5.png"
+		},
+
+		{
+			"id": "Upgrade_Attack_0_Hover",
+			"src": "upgrade_attack_0_hover.png"
+		},
+		{
+			"id": "Upgrade_Attack_1_Hover",
+			"src": "upgrade_attack_1_hover.png"
+		},
+		{
+			"id": "Upgrade_Attack_2_Hover",
+			"src": "upgrade_attack_2_hover.png"
+		},
+		{
+			"id": "Upgrade_Attack_3_Hover",
+			"src": "upgrade_attack_3_hover.png"
+		},
+		{
+			"id": "Upgrade_Attack_4_Hover",
+			"src": "upgrade_attack_4_hover.png"
+		},
+		{
+			"id": "Upgrade_Attack_5_Hover",
+			"src": "upgrade_attack_5_hover.png"
+		},
+
+
+		{
+			"id": "Upgrade_Defence_0",
+			"src": "upgrade_defence_0.png"
+		},
+		{
+			"id": "Upgrade_Defence_1",
+			"src": "upgrade_defence_1.png"
+		},
+
+		{
+			"id": "Upgrade_Defence_0_Hover",
+			"src": "upgrade_defence_0_hover.png"
+		},
+		{
+			"id": "Upgrade_Defence_1_Hover",
+			"src": "upgrade_defence_1_hover.png"
+		},
+
 
 		{
 			"id": "Planet_1",
@@ -236,6 +321,19 @@ Assets = {
 							me.fixedToCamera = true
 							me.inputEnabled = true
 							me.vars.lit = false
+
+							me.vars.newSave = function() {
+								vars.game.save = {}
+
+								vars.game.save.upgrades = {}
+								vars.game.save.upgrades.fireRate = vars.game.config.default.fireRate
+								vars.game.save.upgrades.maxHealth = vars.game.config.default.health
+								vars.game.save.money = 0
+
+								vars.game.currentPlanet = 0 // Start on the first plannet.
+								vars.game.save.progress = {}
+								vars.game.save.progress.completed = 0
+							}
 						},
 						"stateToRun": ["menu", 0]
 					}
@@ -255,13 +353,7 @@ Assets = {
 									if ((! vars.menu.clickCooldown) && (! vars.menu.dragging)) {
 										vars.menu.clickCooldown = true
 
-										vars.game.save = {}
-
-										vars.game.save.fireRate = 30
-										vars.game.bulletSpread = 10
-										vars.game.maxHealth = 50
-
-										vars.game.currentPlanet = 0
+										me.vars.newSave()
 
 
 										beginFade(5, ["game"], 	0)
@@ -502,7 +594,10 @@ Assets = {
 						me.events.onInputOut.add(function(sprite) {
 							me = sprite
 
-
+							var execute = me.vars.parent
+							if (! execute.vars.selected) {
+								execute.addColor("Black", 0)
+							}
 						})
 						me.events.onInputDown.add(function(sprite) {
 							me = sprite
@@ -672,7 +767,34 @@ Assets = {
 								{
 									"text": "Weapons",
 									"content": [
+										{
+											"type": "button",
+											"selected": 0,
+											"imgs": [
+												"Upgrade_Attack_0"
+											],
+											"x": 400,
+											"y": 120,
+											"hoverMessage": function() {
+												return "Hello"
+											},
+											"initfunc": function() {
+												me.scale.setTo(3)
 
+												me.vars.normalImg = me.key
+											},
+											"mainfunc": function() {},
+											"clickfunc": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+
+											},
+											"hoverstart": function() {
+												me.loadTexture(me.vars.normalImg + "_Hover")
+											},
+											"hoverend": function() {
+												me.loadTexture(me.vars.normalImg)
+											}
+										}
 									]
 								},
 								{
@@ -900,7 +1022,12 @@ Assets = {
 							}
 							if (me.vars.hovering) {
 								if (me.vars.JSON.hoverMessage != undefined) {
-									vars.menu.hoverMessage = me.vars.JSON.hoverMessage
+									if (typeof me.vars.JSON.hoverMessage == "function") {
+										vars.menu.hoverMessage = me.vars.JSON.hoverMessage()
+									}
+									else {
+										vars.menu.hoverMessage = me.vars.JSON.hoverMessage
+									}
 								}
 							}
 						}
@@ -996,7 +1123,7 @@ Assets = {
 							me.vars.animationFrame = 0
 							vars.game.flash = 0
 							vars.game.deathAnimationTick = 0
-							vars.game.health = vars.game.maxHealth
+							vars.game.health = vars.game.save.upgrades.maxHealth
 							vars.game.fireCooldown = 0
 
 							me.fixedToCamera = true
@@ -1032,7 +1159,7 @@ Assets = {
 								else {
 									me.cameraOffset.x = 50
 									me.cameraOffset.y = Game.world.centerY
-									}
+								}
 								me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
 								if (Math.floor(me.vars.animationFrame) > 3) {
 									me.vars.animationFrame = 0
@@ -1068,7 +1195,7 @@ Assets = {
 									me.loadTexture("Rocket_1#" + Math.floor(me.vars.animationFrame))
 								}
 
-								if (vars.game.health < vars.game.maxHealth) {
+								if (vars.game.health < vars.game.save.upgrades.maxHealth) {
 									setHealth(vars.game.health + 0.005)
 								}
 
@@ -1133,7 +1260,7 @@ Assets = {
 					{
 						"code": function() {
 							if (vars.game.deathAnimationTick == 0) {
-								if (vars.game.fireCooldown > vars.game.save.fireRate) {
+								if (vars.game.fireCooldown > vars.game.save.upgrades.fireRate) {
 									vars.game.fireCooldown = 0
 									playSound("Shot")
 									clone(Sprites.Rocket.x + (Sprites.Rocket.width / 2), Sprites.Rocket.y, "Bullet_Normal")
@@ -1160,7 +1287,7 @@ Assets = {
 						me.scale.setTo(2)
 						me.anchor.setTo(0.5)
 						me.vars.tick = 0
-						me.y = me.y + Game.rnd.integerInRange(-vars.game.bulletSpread, vars.game.bulletSpread)
+						me.y = me.y + Game.rnd.integerInRange(-vars.game.config.bulletSpread, vars.game.config.bulletSpread)
 						enableTouching()
 
 						cloneSprite(me.x, me.y, "Explosion", "Explosions", {
@@ -1263,24 +1390,28 @@ Assets = {
 				"main": [
 					function() {
 						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["mainScript"]()
+
 						if (touchingClones("Bullet")) {
-
-							if (me.x < Sprites[touchInfo].x) { // Knock me back.
-								me.vars.xVel = me.vars.xVel + 2
-							}
-							else {
-								me.vars.xVel = me.vars.xVel - 2
-							}
-
-							deleteCloneByName(touchInfo) // Destroy the bullet that hit me.
-
-							me.vars.hp = me.vars.hp - 10
 							if (me.vars.hitFlash == 0) {
+								if (me.x < Sprites[touchInfo].x) { // Knock me back.
+									me.vars.xVel = me.vars.xVel + 2
+								}
+								else {
+									me.vars.xVel = me.vars.xVel - 2
+								}
+
+								deleteCloneByName(touchInfo) // Destroy the bullet that hit me.
+
+								vars.game.save.money = vars.game.save.money + 10 // Money
+								me.vars.hp = me.vars.hp - 10
 								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
 								me.vars.hitFlash = 10
+								if (me.vars.hp > 0) {
+									playSound("Hit")
+								}
 							}
-							if (me.vars.hp > 0) {
-								playSound("Hit")
+							else {
+								deleteCloneByName(touchInfo)
 							}
 						}
 						if (! me.vars.fired) {
@@ -1309,6 +1440,8 @@ Assets = {
 
 							me.vars.hp = me.vars.hp - (planetEnemies[hitRocket.vars.type].damage * bonusDamage) // Damage me.
 							hitRocket.vars.hp = hitRocket.vars.hp - (planetEnemies[me.vars.type].damage * bonusDamage)
+
+							vars.game.save.money = vars.game.save.money + ((planetEnemies[hitRocket.vars.type].damage + planetEnemies[me.vars.type].damage) * (bonusDamage * 2)) // Get money.
 
 							if (me.x > hitRocket.x) { // Propel us away from each other.
 								me.vars.xVel = me.vars.xVel + 5
@@ -1455,12 +1588,12 @@ Assets = {
 								execute.ctx.lineTo(execute.width - 10, execute.height / 2)
 								execute.ctx.stroke()
 
-								if (((vars.game.health / vars.game.maxHealth) * 700) - 10 > 5) {
+								if (((vars.game.health / vars.game.save.upgrades.maxHealth) * 700) - 10 > 5) {
 									execute.ctx.lineWidth = 5
 									execute.ctx.strokeStyle = "red"
 									execute.ctx.beginPath()
 									execute.ctx.moveTo(10, execute.height / 2)
-									execute.ctx.lineTo(((vars.game.health / vars.game.maxHealth) * 700) - 10, execute.height / 2)
+									execute.ctx.lineTo(((vars.game.health / vars.game.save.upgrades.maxHealth) * 700) - 10, execute.height / 2)
 									execute.ctx.stroke()
 								}
 

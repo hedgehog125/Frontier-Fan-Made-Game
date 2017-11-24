@@ -1,7 +1,158 @@
-// TODO:
+// Under creative commons licence see: https://creativecommons.org/
+// Github repo: -Insert here-
 
-// Use buttons instead of sprites?
-// Health bars on enemies?
+// Tinylib
+
+fileUploadElement = document.createElement("p")
+fileUploadElement.id = "FileUpload"
+fileUploadElement.hidden = true
+document.body.appendChild(fileUploadElement)
+
+var fpsCalc = {	startTime : 0,	frameNumber : 0,	getFPS : function(){		this.frameNumber++;		var d = new Date().getTime(),			currentTime = ( d - this.startTime ) / 1000,			result = Math.floor( ( this.frameNumber / currentTime ) );		if( currentTime > 1 ){			this.startTime = new Date().getTime();			this.frameNumber = 0;		}		return result;	}	};
+
+function asciiToUTF(ascii) {
+	return String.fromCharCode(ascii).toLowerCase()
+}
+
+function getEl(id) {
+	return document.getElementById(id)
+}
+
+function range(start, stop, step) {
+	// From https://stackoverflow.com/questions/8273047/javascript-function-similar-to-python-range
+    if (typeof stop == 'undefined') {
+        // one param defined
+        stop = start
+        start = 0
+    }
+
+    if (typeof step == 'undefined') {
+        step = 1
+    }
+
+    if ((step > 0 && start >= stop) || (step < 0 && start <= stop)) {
+        return []
+    }
+
+    var result = []
+    for (var i = start; step > 0 ? i < stop : i > stop; i += step) {
+        result.push(i)
+    }
+
+    return result
+}
+
+function post(url, data, code) {
+	// From https://stackoverflow.com/questions/9713058/send-post-data-using-xmlhttprequest and https://stackoverflow.com/questions/18962799/javascript-http-post-with-json-data
+    http = new XMLHttpRequest()
+	var params = JSON.stringify(data)
+	http.open("POST", url, true)
+
+	//Send the proper header information along with the request
+	http.setRequestHeader("Content-type", "application/json")
+
+	http.onreadystatechange = function() {
+		if (http.readyState == 4) {
+			code()
+		}
+	}
+	http.send(params)
+}
+
+function get(url, func) {
+	// From https://stackoverflow.com/questions/9713058/send-post-data-using-xmlhttprequest and https://stackoverflow.com/questions/18962799/javascript-http-post-with-json-data
+    http = new XMLHttpRequest()
+	http.open("GET", url, true)
+	code = func
+	http.onreadystatechange = function() {
+		if (http.readyState == 4) {
+			code()
+		}
+	}
+	http.send()
+}
+
+function save(data,filename) {
+	// based off https://thiscouldbebetter.wordpress.com/2012/12/18/loading-editing-and-saving-a-text-file-in-html5-using-javascrip/
+    var textToSave = data
+    var textToSaveAsBlob = new Blob([textToSave], {type:"text/plain"})
+    var textToSaveAsURL = window.URL.createObjectURL(textToSaveAsBlob)
+    var fileNameToSaveAs = filename
+
+    var downloadLink = document.createElement("a")
+    downloadLink.download = fileNameToSaveAs
+    downloadLink.innerHTML = "Download File"
+    downloadLink.href = textToSaveAsURL
+    downloadLink.onclick = function(event) { document.body.removeChild(event.target) }
+    downloadLink.style.display = "none"
+    document.body.appendChild(downloadLink)
+
+    downloadLink.click()
+}
+
+function fileUpload(code,multiple) {
+    // Based off https://stackoverflow.com/questions/10906734/how-to-upload-image-into-html5-canvas.
+    if (multiple) {
+    	document.getElementById("FileUpload").innerHTML = '<input multiple type="file" id="imageLoader" name="imageLoader" style="visibility:hidden" />'
+    }
+    else {
+    	document.getElementById("FileUpload").innerHTML = '<input type="file" id="imageLoader" name="imageLoader" style="visibility:hidden" />'
+    }
+    uploadCode = code
+    file = 0
+
+    imageLoader = document.getElementById('imageLoader')
+
+    handleImage = function(e) {
+        uploadReader = new FileReader()
+        uploadReader.onload = function(event) {
+        	src = event.target.result
+        	uploadCode()
+            imageLoader = undefined
+            document.getElementById("FileUpload").innerHTML = ""
+            handleImage = undefined
+            file++
+            if (e.target.files[file] != undefined) {
+            	uploadReader.readAsDataURL(e.target.files[file])
+            }
+        }
+        uploadReader.readAsDataURL(e.target.files[0])
+    }
+
+    imageLoader.addEventListener('change', handleImage, false)
+    document.getElementById("imageLoader").click()
+}
+
+function cancelUpload() {
+    uploadCode = ""
+    imageLoader = undefined
+    document.getElementById("FileUpload").innerHTML = ""
+    uploadImg = undefined
+}
+
+// JAMESCRIPT
+
+if (! ("Phaser" in window)) {
+	throw "JAMESCRIPT: Fatal error: Phaser has not been initialised."
+}
+if (! ("state" in window)) {
+	state = []
+}
+if (! ("Assets" in window)) {
+	throw new Error("JAMESCRIPT: Fatal Error: Assets has not been defined.")
+}
+if (getEl("game") == null) {
+	throw new Error("JAMESCRIPT: Fatal Error: Unable to find GameFrame: Element with the id of 'game' doesn't exist.")
+}
+
+if (! ("doubleScriptsAllowed" in window)) {
+	doubleScriptsAllowed = true
+}
+
+// Check the JSON...
+if (! ("scripts" in Assets)) {
+	throw new Error("JAMESCRIPT: Fatal Error: 'scripts' does not exist in the JSON.")
+}
 
 cloneCount = 0
 
@@ -18,6 +169,8 @@ window.addEventListener("touchmove", function(e) {
 	e.preventDefault()
 }, true)
 
+var errors = 0
+
 window.onerror = function (msg, url, lineNo, columnNo, error) { // From https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
     var string = msg.toLowerCase();
     var substring = "script error";
@@ -32,6 +185,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) { // From https://
             'Error object: ' + JSON.stringify(error)
         ].join(' - ');
 
+		errors++ // I added this.
         alert(message);
     }
 
@@ -42,33 +196,57 @@ var width = 800
 var height = 450
 var currentFPS = "?"
 
+var fadeDotError = [
+	"JAMESCRIPT: Fatal Error: No image to run speedtest on.",
+	"This could be because the FadeDot image is missing.",
+	"To fix this error:",
+	"1) Paint a single black pixel." ,
+	"2) Put it in assets/imgs.",
+	"3) Name it 'fade'.",
+	"4) Make sure it has the extention '.png'.",
+	"5) Load it into assets as 'FadeDot'."
+].join("\n")
+
 function testRenderers() {
-	console.log("Running speedtest...")
+	console.log("JAMESCRIPT: Running speedtest...")
 	Game = new Phaser.Game(width, height, Phaser.AUTO, "game", null, false, false)
 	testTick = 0
 	Game.state.add("Test", {
 		"preload": function() {
+			var er = false
+			if (Assets["imgs"] == undefined) {
+				var er = true
+			}
+			else {
+				if (Assets["imgs"][0] == undefined) {
+					var er = true
+				}
+			}
+			if (er) {
+				throw new Error(fadeDotError)
+			}
+
 			Game.load.image("test", "assets/imgs/" + Assets["imgs"][0]["src"])
 		},
 		"create": function() {
 			var i = 0
 			while (i < 500) {
 				var sprite = Game.add.sprite(Game.rnd.integerInRange(0, Game.width), Game.rnd.integerInRange(0, Game.height), "test")
-				sprite.width = 500
-				sprite.height = 500
+				sprite.width = 1
+				sprite.height = 1
 				i++
 			}
 		},
 		"update": function() {
 			if (testTick == 30) {
-				console.log("AUTO achieved " + currentFPS + " FPS.")
+				console.log("JAMESCRIPT: AUTO achieved " + currentFPS + " FPS.")
 				if (currentFPS < 50) {
 					mode = Phaser.CANVAS
-					console.log("FPS is low, WebGL is slow. Switching to canvas mode...")
+					console.log("JAMESCRIPT: FPS is low, WebGL is slow. Switching to canvas mode...")
 				}
 				else {
 					mode = Phaser.AUTO
-					console.log("FPS is fine, AUTO is fine.")
+					console.log("JAMESCRIPT: FPS is fine, AUTO is fine.")
 				}
 
 				console.log("\n \n")
@@ -76,7 +254,9 @@ function testRenderers() {
 				setTimeout(function() {
 					Game.destroy()
 					Game = new Phaser.Game(width, height, mode, "game", null, false, false)
-					setup()
+					console.log("Begining loading assets...")
+					console.log("\n")
+					setTimeout(setup, 30)
 				}, 0)
 			}
 			testTick++
@@ -90,8 +270,6 @@ testRenderers()
 Sprites = {}
 SpritesIndex = {}
 
-
-state = ["menu", 0]
 stateWas = state
 scriptTimes = {}
 resetScriptTimes = {}
@@ -104,6 +282,7 @@ time = "?"
 touchscreen = window.ontouchstart !== undefined
 functionForClone = null
 autoStart = true
+doubleScripts = false
 
 currentFade = {
 	"active": false,
@@ -160,8 +339,12 @@ LoadingState = {
 
 						setTimeout(function() {
 							if (currentFPS <= 31) {
-								GameFrame.parentNode.removeChild(GameFrame)
-								alert("Your browser seems to be running the main script at half the speed it should. This will mean the game won't work properly. \n Try a more up to date browser or maybe another device.")
+								console.warn("JAMESCRIPT: Your browser seems to be running the main script at half the speed it should. This will mean the game won't work properly. \n JAMESCRIPT will still work, but it may behave unexpectedly.")
+								doubleScripts = true
+								if (! doubleScriptsAllowed) {
+									alert("JAMESCRIPT: Your browser seems to be running the main script at half the speed it should. This will mean the game won't work properly.")
+									GameFrame.parentNode.removeChild(GameFrame)
+								}
 							}
 						}, 2000)
 						clearInterval(wait)
@@ -172,7 +355,6 @@ LoadingState = {
 				}, 30)
 			}, 500)
 		}, Game)
-		Game.stage.backgroundColor = "#000000"
 		loadingText = Game.add.text(Game.world.centerX, Game.world.centerY, "Loading... 0%", {
 			"font": "50px Arial",
 			"fill": "#FFFFFF",
@@ -218,6 +400,9 @@ function deleteCloneByName(name) {
 }
 
 function setup() {
+	if ("prescript" in Assets) {
+		Assets["prescript"]()
+	}
 	Game.state.add("Load", LoadingState)
 	Game.state.add("GameState", GameState)
 	Game.state.start("Load")
@@ -539,25 +724,27 @@ function create() {
 		me.JSONID = i
 
 		me.vars = {}
-		if (! (c["scripts"]["main"] === undefined || c["scripts"]["main"] === null)) {
-			if (c["scripts"]["main"].length > 0) {
-				var a = 0
-				for (a in c["scripts"]["main"]) {
-					if (scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()] === undefined) {
-						scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()] = []
+		if (c["scripts"] != undefined) {
+			if (! (c["scripts"]["main"] === undefined || c["scripts"]["main"] === null)) {
+				if (c["scripts"]["main"].length > 0) {
+					var a = 0
+					for (a in c["scripts"]["main"]) {
+						if (scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()] === undefined) {
+							scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()] = []
+						}
+						scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()][scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()].length] = [i, a]
 					}
-					scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()][scriptTimes[c["scripts"]["main"][a]["stateToRun"].toString()].length] = [i, a]
 				}
 			}
-		}
-		if (! (c["scripts"]["init"] === undefined || c["scripts"]["init"] === null)) {
-			if (c["scripts"]["init"].length > 0) {
-				var a = 0
-				for (a in c["scripts"]["init"]) {
-					if (resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()] === undefined) {
-						resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()] = []
+			if (! (c["scripts"]["init"] === undefined || c["scripts"]["init"] === null)) {
+				if (c["scripts"]["init"].length > 0) {
+					var a = 0
+					for (a in c["scripts"]["init"]) {
+						if (resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()] === undefined) {
+							resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()] = []
+						}
+						resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()][resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()].length] = [i, a]
 					}
-					resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()][resetScriptTimes[c["scripts"]["init"][a]["stateToRun"].toString()].length] = [i, a]
 				}
 			}
 		}
@@ -614,9 +801,18 @@ function create() {
 	if (Assets["initScript"] != undefined) {
 		Assets["initScript"]()
 	}
+
+	console.log("\n")
+
+	if (errors == 0) {
+		console.log("JAMESCRIPT has been initialised sucessfully.")
+	}
+	else {
+		console.log("JAMESCRIPT hit an error.")
+	}
 }
 
-function main() {
+function main(loop) {
 	inX = Game.input.x
 	inY = Game.input.y
 
@@ -694,5 +890,9 @@ function main() {
 
 	if (Assets["mainScript"] != undefined) {
 		Assets["mainScript"]()
+	}
+
+	if (doubleScripts && (! loop)) {
+		main(true)
 	}
 }

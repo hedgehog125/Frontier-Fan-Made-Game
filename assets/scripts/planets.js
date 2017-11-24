@@ -86,8 +86,7 @@ vars.game.planets = [
 						}
 					}
 					else {
-						me.alpha = me.alpha - (2 / 100)
-						if (me.alpha <= 0) {
+						if (me.x > Game.world.width || me.x < 0 || me.y < 0 || me.y > Game.height) {
 							deleteClone()
 						}
 					}
