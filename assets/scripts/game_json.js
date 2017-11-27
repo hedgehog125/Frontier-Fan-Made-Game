@@ -246,6 +246,14 @@ Assets = {
 		{
 			"id": "Hit",
 			"src": "sfx/hit.mp3"
+		},
+		{
+			"id": "Upgrade",
+			"src": "sfx/upgrade.mp3"
+		},
+		{
+			"id": "Deny_Button",
+			"src": "sfx/deny.mp3"
 		}
 	],
 	"sprites": [
@@ -326,8 +334,18 @@ Assets = {
 								vars.game.save = {}
 
 								vars.game.save.upgrades = {}
-								vars.game.save.upgrades.fireRate = vars.game.config.default.fireRate
-								vars.game.save.upgrades.maxHealth = vars.game.config.default.health
+								vars.game.save.upgraded = []
+
+								var i = 0
+								var ob = vars.game.config.defaultUpgrades
+								var key = Object.keys(ob)
+								while (i < key.length) {
+									var c = ob[key[i]]
+									vars.game.save.upgrades[key[i]] = c
+									vars.game.save.upgraded[vars.game.save.upgraded.length] = 0
+									i++
+								}
+
 								vars.game.save.money = 0
 
 								vars.game.currentPlanet = 0 // Start on the first plannet.
@@ -643,164 +661,7 @@ Assets = {
 						"code": function() {
 							vars.menu.tab = 0
 
-							var planetImages = []
-							var i = 0
-							for (i in vars.game.planets) {
-								planetImages[planetImages.length] = "Planet_"  + (JSON.parse(i) + 1)
-							}
-
-							vars.menu.tabs = [
-								{
-									"text": "Planets",
-									"content": [
-										{
-											"type": "image",
-											"selected": 0,
-											"imgs": planetImages,
-											"x": 400,
-											"y": 220,
-											"initfunc": function() {
-												me.width = 300
-												me.height = 300
-											},
-											"mainfunc": function() {
-
-											}
-										},
-										{
-											"type": "button",
-											"selected": 0,
-											"imgs": [
-												"Arrow_Left"
-											],
-											"x": 200,
-											"y": 220,
-											"initfunc": function() {
-												me.scale.setTo(10)
-
-												me.vars.normalImg = me.key
-											},
-											"mainfunc": function() {
-												me.x = me.vars.normalX - vars.menu.logoBob[0]
-											},
-											"clickfunc": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-
-												var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
-												plannetSprite.selected--
-												if (plannetSprite.selected < 0) {
-													plannetSprite.selected = plannetSprite.imgs.length - 1
-												}
-											},
-											"hoverstart": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-											},
-											"hoverend": function() {
-												me.loadTexture(me.vars.normalImg)
-											}
-										},
-										{
-											"type": "button",
-											"selected": 0,
-											"imgs": [
-												"Arrow_Right"
-											],
-											"x": 600,
-											"y": 220,
-											"initfunc": function() {
-												me.scale.setTo(10)
-
-												me.vars.normalImg = me.key
-											},
-											"mainfunc": function() {
-												me.x =  me.vars.normalX + vars.menu.logoBob[0]
-											},
-											"clickfunc": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-
-												var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
-												plannetSprite.selected++
-												if (plannetSprite.selected > plannetSprite.imgs.length - 1) {
-													plannetSprite.selected = 0
-												}
-											},
-											"hoverstart": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-											},
-											"hoverend": function() {
-												me.loadTexture(me.vars.normalImg)
-											}
-										},
-										{
-											"type": "button",
-											"selected": 0,
-											"imgs": [
-												"Warp_Button"
-											],
-											"x": 400,
-											"y": 400,
-											"hoverMessage": "Warp to plannet",
-											"initfunc": function() {
-												me.scale.setTo(3)
-
-												me.vars.normalImg = me.key
-											},
-											"mainfunc": function() {},
-											"clickfunc": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-
-												var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
-												vars.game.currentPlanet = plannetSprite.selected
-
-												stopSound("Menu_Music")
-												beginFade(5, ["game"], 0)
-											},
-											"hoverstart": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-											},
-											"hoverend": function() {
-												me.loadTexture(me.vars.normalImg)
-											}
-										}
-									]
-								},
-								{
-									"text": "Weapons",
-									"content": [
-										{
-											"type": "button",
-											"selected": 0,
-											"imgs": [
-												"Upgrade_Attack_0"
-											],
-											"x": 400,
-											"y": 120,
-											"hoverMessage": function() {
-												return "Hello"
-											},
-											"initfunc": function() {
-												me.scale.setTo(3)
-
-												me.vars.normalImg = me.key
-											},
-											"mainfunc": function() {},
-											"clickfunc": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-
-											},
-											"hoverstart": function() {
-												me.loadTexture(me.vars.normalImg + "_Hover")
-											},
-											"hoverend": function() {
-												me.loadTexture(me.vars.normalImg)
-											}
-										}
-									]
-								},
-								{
-									"text": "Defence"
-								}
-							]
+							vars.menu.tabs = vars.menu.menus.JSON.upgrades
 
 							var spacing = 20
 
@@ -958,6 +819,10 @@ Assets = {
 			"clonescripts": {
 				"init": [
 					function() {
+						if (me.vars.JSON.prefunc != null) {
+							me.vars.JSON.prefunc()
+						}
+
 						me.vars.normalX = me.x
 						me.vars.normalY = me.y
 						me.vars.selectedImgWas = me.vars.JSON.selected
@@ -1402,12 +1267,15 @@ Assets = {
 
 								deleteCloneByName(touchInfo) // Destroy the bullet that hit me.
 
-								vars.game.save.money = vars.game.save.money + 10 // Money
-								me.vars.hp = me.vars.hp - 10
+								me.vars.hp = me.vars.hp - vars.game.save.upgrades.fireDamage
 								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
 								me.vars.hitFlash = 10
 								if (me.vars.hp > 0) {
 									playSound("Hit")
+									vars.game.save.money = vars.game.save.money + vars.game.save.upgrades.fireDamage // Money
+								}
+								else {
+									vars.game.save.money = vars.game.save.money + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)) // Money
 								}
 							}
 							else {
