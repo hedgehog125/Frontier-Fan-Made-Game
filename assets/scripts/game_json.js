@@ -1,5 +1,13 @@
 // TODO:
 
+// Fix the bug where bullets pull the enemy
+// Stop enemies from getting hurt when they spawn.
+// Fix the bug where enemy homing bullets can go through other enemies.
+// Fix the bug where your bullets can randomly apear from behind in waves.
+// Check if I changed anything in jamescript.js
+// Change chance system to use percentages.
+
+
 // For first release...
 
 // Upgrades and menu.
@@ -14,7 +22,6 @@
 // Add more planets. <==
 // Create the minigame for the bosses.
 // Different spaceships. (possibly should be in first release).
-
 
 
 
@@ -342,7 +349,7 @@ Assets = {
 								while (i < key.length) {
 									var c = ob[key[i]]
 									vars.game.save.upgrades[key[i]] = c
-									vars.game.save.upgraded[vars.game.save.upgraded.length] = 0
+									vars.game.save.upgraded[vars.game.save.upgraded.length] = vars.game.config.defaultUpgraded[key[i]]
 									i++
 								}
 
@@ -465,9 +472,9 @@ Assets = {
 				"init": [
 					{
 						"code": function() {
-							me.anchor.setTo(0.5)
+							me.anchor.setTo(0.5, 1)
 							me.x = Game.width / 2
-							me.y = 440
+							me.y = Game.height
 
 							me.fixedToCamera = true
 						},
@@ -475,9 +482,9 @@ Assets = {
 					},
 					{
 						"code": function() {
-							me.anchor.setTo(0.5)
+							me.anchor.setTo(0.5, 1)
 							me.x = Game.width / 2
-							me.y = 440
+							me.y = Game.height
 						},
 						"stateToRun": ["menu", 1]
 					}
@@ -828,8 +835,8 @@ Assets = {
 						me.vars.selectedImgWas = me.vars.JSON.selected
 						if (me.vars.JSON.type == "button") {
 							me.vars.hovering = false
-							me.vars.click = 0
 							me.vars.clicked = false
+							me.vars.click = 0
 
 							me.inputEnabled = true
 
@@ -838,22 +845,26 @@ Assets = {
 
 								playSound("Hover_Button")
 
-								me.vars.JSON.hoverstart()
 								me.vars.hovering = true
+								me.vars.clicked = true
+								me.vars.JSON.hoverstart()
 							})
 							me.events.onInputOut.add(function(sprite) {
 								me = sprite
 
-								me.vars.JSON.hoverend()
 								me.vars.hovering = false
+								me.vars.JSON.hoverend()
 							})
 							me.events.onInputDown.add(function(sprite) {
 								me = sprite
 
 								playSound("Click_Button")
 
-								me.vars.clicked = true
+								me.vars.hovering = true
 								me.vars.JSON.clickfunc()
+							})
+							me.events.onInputUp.add(function(sprite) {
+								me.vars.hovering = false
 							})
 						}
 
@@ -872,7 +883,11 @@ Assets = {
 
 						if (me.vars.JSON.type == "button") {
 							if (me.vars.click == 1) {
-								if (! me.vars.clicked) {
+								if ((! me.vars.hovering) || ((! me.vars.clicked) && touchscreen)) {  // Problem here. <============
+									if (! touchscreen) {
+										me.vars.hovering = false
+									}
+									me.vars.clicked = false
 									me.vars.JSON.hoverend()
 								}
 								me.vars.click = 0
@@ -984,6 +999,13 @@ Assets = {
 				"init": [
 					{
 						"code": function() {
+							me.vars.moneySplash = function(amount) {
+								cloneSprite(me.x, me.y, null, "Money_Splash", null, "+" + amount, {
+									"font": "15px Courier",
+									"fill": "#FFFFFF"
+								})
+							}
+
 							me.alpha = 1
 							me.vars.animationFrame = 0
 							vars.game.flash = 0
@@ -1043,6 +1065,8 @@ Assets = {
 											enemySprite.loadTexture(enemy["cos"] + "_Hit")
 											enemySprite.vars.hitFlash = 10
 											enemySprite.vars.hp = enemySprite.vars.hp - 1
+											vars.game.save.money = vars.game.save.money + 1
+											me.vars.moneySplash(1)
 										}
 										setHealth(vars.game.health - damage)
 									}
@@ -1117,6 +1141,11 @@ Assets = {
 					{
 						"code": function() {
 							me.visible = false
+
+							// A database for the homing bullets to comunicate.
+
+							me.vars.tactics = {}
+							me.vars.tactics.targets = {}
 						},
 						"stateToRun": ["game"]
 					}
@@ -1152,7 +1181,44 @@ Assets = {
 						me.scale.setTo(2)
 						me.anchor.setTo(0.5)
 						me.vars.tick = 0
-						me.y = me.y + Game.rnd.integerInRange(-vars.game.config.bulletSpread, vars.game.config.bulletSpread)
+						me.y = me.y + Game.rnd.integerInRange(-vars.game.config.bullets.spread, vars.game.config.bullets.spread)
+
+
+						// For homing
+						me.vars.following = null
+						me.vars.turnSmooth = 0
+						me.vars.turnTo = 0
+						me.vars.follow = function(enemy) {
+							if (enemy != null) {
+								if (Sprites.Bullet.vars.tactics.targets[enemy] == null) {
+									Sprites.Bullet.vars.tactics.targets[enemy] = 0
+								}
+								Sprites.Bullet.vars.tactics.targets[enemy]++
+								me.vars.following = enemy
+							}
+						}
+						me.vars.unfollow = function(enemy) {
+							if (enemy != null) {
+								if (Sprites.Bullet.vars.tactics.targets[enemy] == null) {
+									Sprites.Bullet.vars.tactics.targets[enemy] = 0
+								}
+								Sprites.Bullet.vars.tactics.targets[enemy]--
+								me.vars.following = null
+							}
+						}
+						me.vars.needed = function(enemy) {
+							if (Sprites[spriteCloneIds.Bullet[enemy]] == null) {
+								Sprites.Bullet.vars.tactics.targets[enemy] = 0
+								return false
+							}
+							var hitsNeeded = (Sprites[spriteCloneIds["Enemy_Rockets"][enemy]].vars.hp / vars.game.save.upgrades.fireDamage) //+ 1
+							if (Sprites.Bullet.vars.tactics.targets[enemy] == null) {
+								Sprites.Bullet.vars.tactics.targets[enemy] = 0
+							}
+							return hitsNeeded >= Sprites.Bullet.vars.tactics.targets[enemy]
+							//return true // Does it really help?
+						}
+
 						enableTouching()
 
 						cloneSprite(me.x, me.y, "Explosion", "Explosions", {
@@ -1164,13 +1230,73 @@ Assets = {
 				"main": [
 					function() {
 
-						me.x = me.x + 5
-						if ((me.vars.tick % 3) == 0) {
-							me.y = me.y + Game.rnd.integerInRange(-2, 2)
+						//me.x = me.x + 5
+						if ((me.vars.tick % vars.game.config.bullets.bobfrequency) == 0) {
+							me.y = me.y + Game.rnd.integerInRange(-vars.game.config.bullets.bobamount, vars.game.config.bullets.bobamount)
 						}
 
+						me.vars.turnSmooth = Math.round((vars.game.save.upgrades.homing / 2000) * 360)
+						if (me.vars.turnSmooth < 1) {
+							me.vars.turnSmooth = 1
+						}
 
-						if (me.x > Game.world.width + me.width) {
+						if (vars.game.save.upgrades.homing > 0) { // Homing
+							var i = 0
+							var closestDis = Infinity
+							var closest = null
+
+							for (i in spriteCloneIds.Enemy_Rockets) {
+								if (spriteCloneIds.Enemy_Rockets[i] != undefined) {
+									var c = Sprites[spriteCloneIds.Enemy_Rockets[i]]
+									var dis = Math.abs(c.x - me.x) + Math.abs(c.y - me.y)
+									if (dis <= vars.game.save.upgrades.homing) {
+										if (dis < closestDis) {
+											var tooClose = dis <= Math.max(Sprites.Rocket.width, Sprites.Rocket.height) * 3
+											if ((Game.rnd.integerInRange(0, 1) == 0) || (closest == null) || tooClose) { // Add some randomness.
+												if (me.vars.needed(c.cloneID) || tooClose) {
+													var closest = c
+													var closestDis = dis
+												}
+											}
+										}
+									}
+								}
+							}
+							var angleWas = me.angle
+							if (closest != null) {
+								me.angle = getAngleBetweenSprites(me, closest)
+								if (closest.cloneID != me.vars.following) {
+									me.vars.unfollow(me.vars.following)
+									me.vars.follow(closest.cloneID)
+								}
+							}
+							if (Math.abs(me.angle - angleWas) > me.vars.turnSmooth) {
+								if (me.angle - angleWas > 0) {
+									me.angle = (angleWas + me.vars.turnSmooth) % 360
+								}
+								else {
+									me.angle = (angleWas - me.vars.turnSmooth) % 360
+								}
+							}
+							if (closest != null) {
+								if ((closest.vars.hitFlash == 0) || closestDis * 4 < Math.max(closest.width, closest.height)) {
+									move(5)
+								}
+								else {
+									if (closestDis * 2 < Math.max(closest.width, closest.height)) {  // No point if it is invunerable.
+										move(-5) // Tactical retreat
+									}
+								}
+							}
+							else {
+								move(5)
+							}
+						}
+						else {
+							move(5)
+						}
+
+						if (me.x > Game.world.width || me.x < 0 || me.y < 0 || me.y > Game.height) {
 							deleteClone()
 							return
 						}
@@ -1232,8 +1358,8 @@ Assets = {
 						me.vars.hitFlash = 0
 						me.vars.fired = false
 						me.vars.fireTime = 0
-						me.vars.escaped = 0
 						me.vars.xVel = 0
+						me.vars.firstTouching = null
 
 						if (me.y < Game.world.centerY) { // Check I'm not too high or low.
 							if (me.y - (me.height / 2) - 10 < 0) {
@@ -1256,9 +1382,16 @@ Assets = {
 					function() {
 						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["mainScript"]()
 
+						me.vars.moneySplash = function(amount) {
+							cloneSprite(me.x, me.y, null, "Money_Splash", null, "+" + amount, {
+								"font": "15px Courier",
+								"fill": "#FFFFFF"
+							})
+						}
+
 						if (touchingClones("Bullet")) {
 							if (me.vars.hitFlash == 0) {
-								if (me.x < Sprites[touchInfo].x) { // Knock me back.
+								if (getCentreX() > getCentreX(touchInfo)) { // Knock me back.
 									me.vars.xVel = me.vars.xVel + 2
 								}
 								else {
@@ -1273,9 +1406,11 @@ Assets = {
 								if (me.vars.hp > 0) {
 									playSound("Hit")
 									vars.game.save.money = vars.game.save.money + vars.game.save.upgrades.fireDamage // Money
+									me.vars.moneySplash(vars.game.save.upgrades.fireDamage)
 								}
 								else {
 									vars.game.save.money = vars.game.save.money + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)) // Money
+									me.vars.moneySplash(vars.game.save.upgrades.fireDamage - (0 - me.vars.hp))
 								}
 							}
 							else {
@@ -1284,17 +1419,22 @@ Assets = {
 						}
 						if (! me.vars.fired) {
 							if (! touchingClones("Enemy_Rockets")) {
-								me.vars.escaped++
+								me.vars.fired = true
 							}
 							else {
-								me.vars.escaped = 0
+								if (me.vars.firstTouching != null) {
+									if (me.vars.firstTouching != touchInfo) { // If I am no longer touching the first enemy I touched or I'm touching an older enemy.
+										me.vars.fired = true
+									}
+								}
+								else {
+									me.vars.firstTouching = touchInfo
+								}
+
 								me.vars.fireTime = me.vars.fireTime + 1
 								if (me.vars.fireTime > 50) {
 									me.vars.fired = true
 								}
-							}
-							if (me.vars.escaped > 0) {
-								me.vars.fired = true
 							}
 						}
 						var criteria = function(hit) {
@@ -1306,12 +1446,35 @@ Assets = {
 
 							var bonusDamage = 2 // Extra damage because it's hard to get them to crash into each other.
 
-							me.vars.hp = me.vars.hp - (planetEnemies[hitRocket.vars.type].damage * bonusDamage) // Damage me.
-							hitRocket.vars.hp = hitRocket.vars.hp - (planetEnemies[me.vars.type].damage * bonusDamage)
 
-							vars.game.save.money = vars.game.save.money + ((planetEnemies[hitRocket.vars.type].damage + planetEnemies[me.vars.type].damage) * (bonusDamage * 2)) // Get money.
+							var damage = planetEnemies[hitRocket.vars.type].damage * bonusDamage
 
-							if (me.x > hitRocket.x) { // Propel us away from each other.
+							var gainMoney = 0
+
+							if (me.vars.hp - damage < 0) {
+								var gainMoney = gainMoney + (me.vars.hp * bonusDamage)
+								me.vars.hp = me.vars.hp - damage // Damage me
+							}
+							else {
+								me.vars.hp = me.vars.hp - damage // Damage me.
+								var gainMoney = gainMoney + (damage + bonusDamage)
+							}
+
+							var damage = planetEnemies[me.vars.type].damage * bonusDamage
+
+							if (hitRocket.vars.hp - damage < 0) {
+								var gainMoney = gainMoney + (hitRocket.vars.hp * bonusDamage)
+								hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me
+							}
+							else {
+								hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me.
+								var gainMoney = gainMoney + (damage * bonusDamage)
+							}
+
+							vars.game.save.money = vars.game.save.money + gainMoney // Get money.
+							me.vars.moneySplash(gainMoney)
+
+							if (getCentreX() > getCentreX(touchInfo)) { // Propel us away from each other.
 								me.vars.xVel = me.vars.xVel + 5
 								hitRocket.vars.xVel = hitRocket.vars.xVel - 5
 							}
@@ -1376,6 +1539,7 @@ Assets = {
 							cloneSprite(me.x, me.y, "Explosion", "Explosions", {
 								"size": explosionWidth
 							})
+
 							deleteClone()
 							return
 						}
@@ -1436,6 +1600,37 @@ Assets = {
 			}
 		},
 		// Explosions
+		{
+			"scripts": {
+				"main": [
+					{
+						"code": null,
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Money_Splash",
+			"x": 0,
+			"y": 0,
+			"text": "",
+			"type": "text",
+			"clonescripts": {
+				"init": [
+
+				],
+				"main": [
+					function() {
+						me.alpha = me.alpha - (1 / 100)
+						me.y = me.y - 1
+						if (me.alpha <= 0) {
+							deleteClone()
+							return
+						}
+					}
+				]
+			}
+		},
+		// Money Splash
 		{
 			"scripts": {
 				"init": [

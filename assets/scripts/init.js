@@ -11,26 +11,43 @@ vars.game = {}
 // Config
 
 vars.game.config = {}
-vars.game.config.bulletSpread = 10
+vars.game.config.bullets = {}
+vars.game.config.bullets.spread = 10
+vars.game.config.bullets.bobfrequency = 3
+vars.game.config.bullets.bobamount = 2
+
+vars.game.config.bulletSpread
+
+
+// Upgrades
 
 vars.game.config.defaultUpgrades = {}
+vars.game.config.defaultUpgraded = {}
 
 vars.game.config.defaultUpgrades.fireDamage = 10
-
 vars.game.config.defaultUpgrades.fireRate = 30
+vars.game.config.defaultUpgrades.homing = 0
+
+vars.game.config.defaultUpgrades.bullets = true
+vars.game.config.defaultUpgrades.lasers = false
+vars.game.config.defaultUpgrades.plasma = false
+
 
 vars.game.config.defaultUpgrades.maxHealth = 50
 
 
-vars.game.config.upgrades = {}
-vars.game.config.upgrades.attack = [
-    {
-        "price": {
-            "start": 10,
-            "increase": 1.5
-        }
-    }
-]
+
+vars.game.config.defaultUpgraded.fireDamage = 0
+vars.game.config.defaultUpgraded.fireRate = 0
+vars.game.config.defaultUpgraded.homing = 0
+
+vars.game.config.defaultUpgraded.bullets = 2
+vars.game.config.defaultUpgraded.lasers = 0
+vars.game.config.defaultUpgraded.plasma = 0
+
+vars.game.config.defaultUpgraded.maxHealth = 0
+
+
 
 
 state = ["menu", 0]

@@ -40,7 +40,7 @@ vars.game.planets = [
 						me.vars.moveTick++
 					}
 					if (me.vars.fireCooldown < 0) {
-						//me.vars.fireCooldown = -1
+						//me.vars.fireCooldown = 5
 						me.vars.fireCooldown = Game.rnd.integerInRange(200, 400)
 						clone(me.x, me.y, "Enemy_Bullet", 2)
 					}
