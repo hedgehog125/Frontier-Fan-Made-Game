@@ -3,12 +3,12 @@ vars.game.planets = [
 		"name": "Oytera",
 		"enemies": [
 			{
-				"chance": [0, 80],
+				"chance": 80,
 				"health": 10,
 				"damage": 2,
 				"cos": "Enemy_Rocket_1",
+				"size": 4,
 				"initScript": function() {
-					me.scale.setTo(4)
 					me.vars.moveTick = 0
 				},
 				"mainScript": function() {
@@ -22,12 +22,12 @@ vars.game.planets = [
 				}
 			},
 			{
-				"chance": [81, 100],
+				"chance": 20,
 				"health": 100,
 				"damage": 5,
 				"cos": "Enemy_Rocket_2",
+				"size": 4,
 				"initScript": function() {
-					me.scale.setTo(3)
 					me.vars.moveTick = 0
 					me.vars.fireCooldown = 0
 				},
@@ -40,9 +40,14 @@ vars.game.planets = [
 						me.vars.moveTick++
 					}
 					if (me.vars.fireCooldown < 0) {
-						//me.vars.fireCooldown = 5
-						me.vars.fireCooldown = Game.rnd.integerInRange(200, 400)
-						clone(me.x, me.y, "Enemy_Bullet", 2)
+						if (me.vars.shown) { // Make sure that I've shown myself first.
+							//me.vars.fireCooldown = 5 // Make me fire really fast
+							me.vars.fireCooldown = Game.rnd.integerInRange(200, 400)
+
+							playSound("Launch")
+
+							clone(me.x, me.y, "Enemy_Bullet", 2)
+						}
 					}
 					else {
 						me.vars.fireCooldown--
@@ -50,17 +55,39 @@ vars.game.planets = [
 				}
 			},
 			{
-				"chance": [-1, -1],
+				"chance": 0,
 				"health": 1,
 				"damage": 10,
 				"cos": "Enemy_Bullet",
+				"disableSpawnMove": true, // Overived the moving back at when I spawn.
+				"size": 1.5,
 				"initScript": function() {
-					me.scale.setTo(1.5)
 					me.angle = getAngleBetweenSprites(me, Sprites.Rocket)
 
 					me.vars.maxTurn = 100
 					me.vars.bored = false
 					me.vars.turnAnimation = 10
+
+					// So it's behind the spaceship it was fired from...
+					jumpInFrontOfSprite("Star_Parallax_2")
+
+					// Spawn in an explosion...
+					// Set my width and height so that I'm really small
+					// Move me out until I don't touch the spaceship I was fired from...
+					var tmp = [me.width, me.height] // Save these
+					me.width = 1 // Make me small...
+					me.height = 1
+					while (touchingClones("Enemy_Rockets")) { // Move away until I'm not touching the spaceship I was fired from...
+						move(1)
+					}
+					cloneSprite(getCentreX(), getCentreY(), "Explosion", "Explosions", {
+						"size": Game.rnd.integerInRange(10, 15),
+						"disableScreenshake": true
+					}) // Spawn in an explosion
+
+					// Revert back the width/height...
+					me.width = tmp[0]
+					me.height = tmp[1]
 				},
 				"mainScript": function() {
 					if (! me.vars.bored) {

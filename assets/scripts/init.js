@@ -11,12 +11,6 @@ vars.game = {}
 // Config
 
 vars.game.config = {}
-vars.game.config.bullets = {}
-vars.game.config.bullets.spread = 10
-vars.game.config.bullets.bobfrequency = 3
-vars.game.config.bullets.bobamount = 2
-
-vars.game.config.bulletSpread
 
 
 // Upgrades
@@ -34,7 +28,8 @@ vars.game.config.defaultUpgrades.plasma = false
 
 
 vars.game.config.defaultUpgrades.maxHealth = 50
-
+vars.game.config.defaultUpgrades.speed = 15
+vars.game.config.defaultUpgrades.hpRegen = 0.005
 
 
 vars.game.config.defaultUpgraded.fireDamage = 0
@@ -46,6 +41,9 @@ vars.game.config.defaultUpgraded.lasers = 0
 vars.game.config.defaultUpgraded.plasma = 0
 
 vars.game.config.defaultUpgraded.maxHealth = 0
+vars.game.config.defaultUpgraded.speed = 0
+vars.game.config.defaultUpgraded.hpRegen = 0
+
 
 
 

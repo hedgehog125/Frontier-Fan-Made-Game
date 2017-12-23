@@ -1,16 +1,9 @@
 // TODO:
 
-// Fix the bug where bullets pull the enemy
-// Stop enemies from getting hurt when they spawn.
-// Fix the bug where enemy homing bullets can go through other enemies.
-// Fix the bug where your bullets can randomly apear from behind in waves.
-// Check if I changed anything in jamescript.js
-// Change chance system to use percentages.
-
 
 // For first release...
 
-// Upgrades and menu.
+// Make sure you haven't had full health for a short amount of time when the health restored sound is played. - Maybe not needed?
 // Health bars on enemies.
 // Add bosses into the API.
 // Create a boss for the first planet.
@@ -68,6 +61,14 @@ Assets = {
 			"id": "Bullet_Normal",
 			"src": "bullet.png"
 		},
+		{
+			"id": "Bullet_Laser",
+			"src": "laser.png"
+		},
+		{
+			"id": "Bullet_Plasma",
+			"src": "plasma.png"
+		},
 		// Enemies.
 		{
 			"id": "Enemy_Rocket_1",
@@ -97,6 +98,14 @@ Assets = {
 		{
 			"id": "Explosion",
 			"src": "explosion.png"
+		},
+		{
+			"id": "Laser Fire",
+			"src": "laser_explosion.png"
+		},
+		{
+			"id": "Plasma Fire",
+			"src": "plasma_explosion.png"
 		},
 
 		// Upgrades / world selector.
@@ -204,6 +213,14 @@ Assets = {
 			"id": "Upgrade_Defence_1_Hover",
 			"src": "upgrade_defence_1_hover.png"
 		},
+		{
+			"id": "Upgrade_Defence_2",
+			"src": "upgrade_defence_2.png"
+		},
+		{
+			"id": "Upgrade_Defence_2_Hover",
+			"src": "upgrade_defence_2_hover.png"
+		},
 
 
 		{
@@ -247,6 +264,10 @@ Assets = {
 			"src": "sfx/shot.mp3"
 		},
 		{
+			"id": "Laser",
+			"src": "sfx/laser.mp3"
+		},
+		{
 			"id": "Boom",
 			"src": "sfx/explosion.mp3"
 		},
@@ -261,6 +282,14 @@ Assets = {
 		{
 			"id": "Deny_Button",
 			"src": "sfx/deny.mp3"
+		},
+		{
+			"id": "Launch",
+			"src": "sfx/launch.mp3"
+		},
+		{
+			"id": "Health_Restored",
+			"src": "sfx/health_restored.mp3"
 		}
 	],
 	"sprites": [
@@ -611,6 +640,8 @@ Assets = {
 
 							playSound("Hover_Button")
 
+							me.vars.clicked = true
+
 							var execute = me.vars.parent
 							if (! execute.vars.selected) {
 								execute.addColor("#BFBFBF", 0)
@@ -673,7 +704,7 @@ Assets = {
 							var spacing = 20
 
 							var i = 0
-							var x = spacing
+							var x = (spacing / 2)
 
 							for (i in vars.menu.tabs) {
 								var c = vars.menu.tabs[i]
@@ -864,7 +895,7 @@ Assets = {
 								me.vars.JSON.clickfunc()
 							})
 							me.events.onInputUp.add(function(sprite) {
-								me.vars.hovering = false
+								me.vars.clicked = false
 							})
 						}
 
@@ -1041,7 +1072,7 @@ Assets = {
 										var glideY = Game.height - (me.height / 2)
 									}
 
-									glideTo(glideX, glideY, 10)
+									glideTo(glideX, glideY, vars.game.save.upgrades.speed)
 								}
 								else {
 									me.cameraOffset.x = 50
@@ -1085,7 +1116,12 @@ Assets = {
 								}
 
 								if (vars.game.health < vars.game.save.upgrades.maxHealth) {
-									setHealth(vars.game.health + 0.005)
+									if (vars.game.health + vars.game.save.upgrades.hpRegen > vars.game.save.upgrades.maxHealth) { // Stop it going over the max health
+										setHealth(vars.game.save.upgrades.maxHealth)
+									}
+									else {
+										setHealth(vars.game.health + vars.game.save.upgrades.hpRegen)
+									}
 								}
 
 								if (vars.game.zoomAnimation == 1) {
@@ -1118,7 +1154,7 @@ Assets = {
 										vars.game.deathAnimationTick = "done"
 
 										stopSound("Game_Music")
-										beginFade(1, ["menu", 1], 0) // TODO: Change this to ["menu", 1] there's also a problem now.
+										beginFade(1, ["menu", 1], 0)
 									}
 								}
 							}
@@ -1146,6 +1182,60 @@ Assets = {
 
 							me.vars.tactics = {}
 							me.vars.tactics.targets = {}
+
+							// Find out the current weapon system...
+							var upgrades = vars.game.save.upgrades
+						 	me.vars.weaponConfig = {
+								"bullets": {
+									"speed": 5,
+									"bob": {
+										"amount": 3,
+										"frequency": 3
+									},
+									"spread": 10,
+									"cos": "Bullet_Normal",
+									"snd": "Shot",
+									"size": 2,
+									"fireCos": "Explosion"
+								},
+								"lasers": {
+									"speed": 7,
+									"bob": {
+										"amount": 2,
+										"frequency": 4
+									},
+									"spread": 5,
+									"cos": "Bullet_Laser",
+									"snd": "Laser",
+									"size": 1,
+									"fireCos": "Laser Fire"
+								},
+								"plasma": {
+									"speed": 10,
+									"bob": {
+										"amount": 1,
+										"frequency": 5
+									},
+									"spread": 0,
+									"cos": "Bullet_Plasma",
+									"snd": "Laser",
+									"size": 1.5,
+									"fireCos": "Plasma Fire"
+								}
+							}
+							me.vars.weaponSystem = null
+							var types = me.vars.weaponConfig
+
+							var i = 0
+							for (i in types) {
+								if (upgrades[i]) {
+									me.vars.weaponSystem = i
+								}
+							}
+							if (me.vars.weaponSystem == null) {
+								me.vars.weaponSystem = "bullets"
+							}
+
 						},
 						"stateToRun": ["game"]
 					}
@@ -1155,9 +1245,11 @@ Assets = {
 						"code": function() {
 							if (vars.game.deathAnimationTick == 0) {
 								if (vars.game.fireCooldown > vars.game.save.upgrades.fireRate) {
+									var weapon = me.vars.weaponConfig[me.vars.weaponSystem]
+
 									vars.game.fireCooldown = 0
-									playSound("Shot")
-									clone(Sprites.Rocket.x + (Sprites.Rocket.width / 2), Sprites.Rocket.y, "Bullet_Normal")
+									playSound(weapon.snd)
+									clone(Sprites.Rocket.x + (Sprites.Rocket.width / 2), Sprites.Rocket.y, weapon.cos, weapon)
 								}
 								else {
 									if (vars.game.zoomAnimation == 0) {
@@ -1177,11 +1269,15 @@ Assets = {
 			"clonescripts": {
 				"init": [
 					function() {
+						me.vars.weaponJSON = dataForClone
+
 						me.visible = true
-						me.scale.setTo(2)
+
+						me.scale.setTo(me.vars.weaponJSON.size)
 						me.anchor.setTo(0.5)
+
 						me.vars.tick = 0
-						me.y = me.y + Game.rnd.integerInRange(-vars.game.config.bullets.spread, vars.game.config.bullets.spread)
+						me.y = me.y + Game.rnd.integerInRange(-me.vars.weaponJSON.spread, me.vars.weaponJSON.spread)
 
 
 						// For homing
@@ -1221,7 +1317,7 @@ Assets = {
 
 						enableTouching()
 
-						cloneSprite(me.x, me.y, "Explosion", "Explosions", {
+						cloneSprite(me.x, me.y, me.vars.weaponJSON.fireCos, "Explosions", {
 							"size": 10,
 							"disableScreenshake": true
 						})
@@ -1231,8 +1327,8 @@ Assets = {
 					function() {
 
 						//me.x = me.x + 5
-						if ((me.vars.tick % vars.game.config.bullets.bobfrequency) == 0) {
-							me.y = me.y + Game.rnd.integerInRange(-vars.game.config.bullets.bobamount, vars.game.config.bullets.bobamount)
+						if ((me.vars.tick % me.vars.weaponJSON.bob.frequency) == 0) {
+							me.y = me.y + Game.rnd.integerInRange(-me.vars.weaponJSON.bob.amount, me.vars.weaponJSON.bob.amount)
 						}
 
 						me.vars.turnSmooth = Math.round((vars.game.save.upgrades.homing / 2000) * 360)
@@ -1280,20 +1376,20 @@ Assets = {
 							}
 							if (closest != null) {
 								if ((closest.vars.hitFlash == 0) || closestDis * 4 < Math.max(closest.width, closest.height)) {
-									move(5)
+									move(me.vars.weaponJSON.speed)
 								}
 								else {
 									if (closestDis * 2 < Math.max(closest.width, closest.height)) {  // No point if it is invunerable.
-										move(-5) // Tactical retreat
+										move(-me.vars.weaponJSON.speed) // Tactical retreat
 									}
 								}
 							}
 							else {
-								move(5)
+								move(me.vars.weaponJSON.speed)
 							}
 						}
 						else {
-							move(5)
+							move(me.vars.weaponJSON.speed)
 						}
 
 						if (me.x > Game.world.width || me.x < 0 || me.y < 0 || me.y > Game.height) {
@@ -1315,6 +1411,31 @@ Assets = {
 						"code": function() {
 							vars.game.spawnTick = 0
 							vars.game.spawnRate = 200
+							me.visible = false
+
+
+							// To calculate the chances of each type of spaceship spawning...
+
+							me.vars.total = 0
+
+							var i = 0
+							for (i in vars.game.planets[vars.game.currentPlanet]["enemies"]) {
+								var c = vars.game.planets[vars.game.currentPlanet]["enemies"][i]
+								me.vars.total = me.vars.total + c["chance"]
+							}
+
+							me.vars.chances = {}
+
+							var i = 0
+							for (i in vars.game.planets[vars.game.currentPlanet]["enemies"]) {
+								var c = vars.game.planets[vars.game.currentPlanet]["enemies"][i]
+								me.vars.chances[i] = (c["chance"] / me.vars.total) * 10000
+							}
+
+							var arr = sortOb(me.vars.chances, true)
+
+							me.vars.chances = arr[0]
+							me.vars.chancesOrder = arr[1]
 						},
 						"stateToRun": ["game"]
 					}
@@ -1323,14 +1444,19 @@ Assets = {
 					{
 						"code": function() {
 							if (vars.game.spawnTick > vars.game.spawnRate) {
-								vars.game.spawnTick = 0
-								var rnd = Game.rnd.between(0, 100)
+								vars.game.spawnTick = 0 - (Game.rnd.integerInRange(0 - (vars.game.spawnRate / 5), vars.game.spawnRate / 5)) // Add some randomness
+
+
+								var rnd = Game.rnd.between(0, 10000)
 								var i = 0
-								for (i in vars.game.planets[vars.game.currentPlanet]["enemies"]) {
-									var c = vars.game.planets[vars.game.currentPlanet]["enemies"][i]
-									if (rnd >= c["chance"][0] && rnd <= c["chance"][1]) {
-										clone(Game.world.width, Game.rnd.between(0, Game.height), c["cos"], i)
+								for (i in me.vars.chancesOrder) {
+									var a = me.vars.chancesOrder[i]
+									var c = vars.game.planets[vars.game.currentPlanet].enemies[a]
+									if (rnd <= me.vars.chances[i]) {
+										clone(Game.world.width, Game.rnd.between(0, Game.height), c.cos, a)
+										break
 									}
+									var rnd = rnd - me.vars.chances[i]
 								}
 							}
 							else {
@@ -1350,16 +1476,24 @@ Assets = {
 			"clonescripts": {
 				"init": [
 					function() {
-						me.anchor.setTo(0, 0.5)
+						enableTouching()
 
 						me.vars.type = dataForClone
-						me.vars.hp = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["health"]
+						me.vars.JSON = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]
+						me.vars.hp = me.vars.JSON.health
 
 						me.vars.hitFlash = 0
-						me.vars.fired = false
-						me.vars.fireTime = 0
+						me.vars.escaped = false
+						me.vars.escapeTime = 0
+						me.vars.noTouchTime = 0
 						me.vars.xVel = 0
 						me.vars.firstTouching = null
+
+						if (me.vars.JSON.size != undefined) {
+							me.scale.setTo(me.vars.JSON.size)
+						}
+
+						me.anchor.setTo(0, 0.5)
 
 						if (me.y < Game.world.centerY) { // Check I'm not too high or low.
 							if (me.y - (me.height / 2) - 10 < 0) {
@@ -1372,14 +1506,32 @@ Assets = {
 							}
 						}
 
+						me.vars.shown = false
 
-						enableTouching()
+						if (! me.vars.JSON.disableSpawnMove) { // To stop me spawning inside of other spaceships and getting hurt.
+							if (touchingClones("Enemy_Rockets")) {
+								while (touchingClones("Enemy_Rockets")) {
+									me.x = me.x + 5
+								}
+								me.x = me.x + me.width + 30 // Leave a gap
+							}
+						}
 
-						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["initScript"]()
+						me.vars.JSON.initScript()
 					}
 				],
 				"main": [
 					function() {
+						if (me.x < vars.game.scroll + Game.width) {
+							me.vars.shown = true
+						}
+						if (! me.vars.shown) { // Make sure I haven't been shown, otherwise it will be weird when I disappear.
+							if (me.x > vars.game.scroll + Game.width + me.width + 100) { // I've gone too far forwards, so forget that I ever existed.
+								deleteClone()
+								return
+							}
+						}
+
 						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["mainScript"]()
 
 						me.vars.moneySplash = function(amount) {
@@ -1417,30 +1569,40 @@ Assets = {
 								deleteCloneByName(touchInfo)
 							}
 						}
-						if (! me.vars.fired) {
-							if (! touchingClones("Enemy_Rockets")) {
-								me.vars.fired = true
-							}
-							else {
-								if (me.vars.firstTouching != null) {
-									if (me.vars.firstTouching != touchInfo) { // If I am no longer touching the first enemy I touched or I'm touching an older enemy.
-										me.vars.fired = true
-									}
-								}
-								else {
+						// So enemy bullets don't blow up the spaceship they were fired from!
+						if (! me.vars.escaped) {
+							if (me.vars.firstTouching == null) {
+								if (touchingClones("Enemy_Rockets")) {
 									me.vars.firstTouching = touchInfo
 								}
-
-								me.vars.fireTime = me.vars.fireTime + 1
-								if (me.vars.fireTime > 50) {
-									me.vars.fired = true
+								else {
+									//me.vars.escaped = true
 								}
+							}
+
+							var touching = touchingClones("Enemy_Rockets")
+							if (! touching) {
+								me.vars.noTouchTime++
+							}
+							else {
+								me.vars.noTouchTime = 0
+								if (me.vars.firstTouching != touchInfo) { // If I am no longer touching the first enemy I touched or I'm touching an older enemy.
+									me.vars.escaped = true
+								}
+
+								me.vars.escapeTime = me.vars.escapeTime + 1
+								if (me.vars.escapeTime > 50) {
+									me.vars.escaped = true
+								}
+							}
+							if (me.vars.noTouchTime > 2) {
+								me.vars.escaped = true
 							}
 						}
 						var criteria = function(hit) {
-							return hit.vars.fired && hit.vars.hitFlash == 0
+							return hit.vars.escaped && hit.vars.hitFlash == 0
 						}
-						if (touchingClones("Enemy_Rockets", criteria) && me.vars.fired && me.vars.hitFlash == 0) {
+						if (touchingClones("Enemy_Rockets", criteria) && me.vars.escaped && me.vars.hitFlash == 0 && (! me.vars.moveBack)) {
 							var planetEnemies = vars.game.planets[vars.game.currentPlanet]["enemies"]
 							var hitRocket = Sprites[touchInfo]
 
@@ -1636,7 +1798,9 @@ Assets = {
 				"init": [
 					{
 						"code": function() {
-							setHealth = function(health) {
+							me.vars.flashCooldown = -1
+
+							setHealth = function(health, disableFlash) {
 								vars.game.health = health
 
 								var execute = Sprites["HealthBar"]
@@ -1645,7 +1809,15 @@ Assets = {
 								execute.ctx.lineCap = "round"
 
 								execute.ctx.lineWidth = 10
-								execute.ctx.strokeStyle = "#D9D9D9"
+								if (health == vars.game.save.upgrades.maxHealth && (! disableFlash)) {
+									execute.ctx.strokeStyle = "White"
+
+									playSound("Health_Restored")
+									execute.vars.flashCooldown = 35
+								}
+								else {
+									execute.ctx.strokeStyle = "#B9B9B9"
+								}
 								execute.ctx.beginPath()
 								execute.ctx.moveTo(10, execute.height / 2)
 								execute.ctx.lineTo(execute.width - 10, execute.height / 2)
@@ -1661,7 +1833,7 @@ Assets = {
 								}
 
 							}
-							setHealth(vars.game.health)
+							setHealth(vars.game.health, true)
 
 						},
 						"stateToRun": ["game"]
@@ -1671,6 +1843,15 @@ Assets = {
 					{
 						"code": function() {
 							me.dirty = true
+
+							if (me.vars.flashCooldown == 0) {
+								me.vars.flashCooldown = -1
+
+								setHealth(vars.game.health, true)
+							}
+							else {
+								me.vars.flashCooldown--
+							}
 						},
 						"stateToRun": ["game"]
 					}
