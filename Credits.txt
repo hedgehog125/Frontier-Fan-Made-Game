@@ -1,6 +1,6 @@
 == Sounds ==
 
-The plasma sound effect is from https://www.youtube.com/watch?v=myAmiHOyoLo
+The plasma sound effect is from https://www.youtube.com/watch?v=myAmiHOyoLo (which I decided not to use)
 The first part of the in-game music is from either Limitless or Elektronima, I'm not sure which.
 The second part is from http://newgrounds.com and the menu music also is.
 The sound effects are made using https://www.bfxr.net/ by theChaotic (https://scratch.mit.edu/users/theChAOTiC/).

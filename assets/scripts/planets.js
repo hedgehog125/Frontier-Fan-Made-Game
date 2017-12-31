@@ -21,6 +21,7 @@ vars.game.planets = [
 					}
 				}
 			},
+			// Little spaceship
 			{
 				"chance": 20,
 				"health": 100,
@@ -40,10 +41,9 @@ vars.game.planets = [
 						me.vars.moveTick++
 					}
 					if (me.vars.fireCooldown < 0) {
-						if (me.vars.shown) { // Make sure that I've shown myself first.
+						if (me.x < vars.game.scroll + Game.width) { // Make sure that I've shown myself first.
 							//me.vars.fireCooldown = 5 // Make me fire really fast
 							me.vars.fireCooldown = Game.rnd.integerInRange(200, 400)
-
 							playSound("Launch")
 
 							clone(me.x, me.y, "Enemy_Bullet", 2)
@@ -54,6 +54,7 @@ vars.game.planets = [
 					}
 				}
 			},
+			// Egg spaceship
 			{
 				"chance": 0,
 				"health": 1,
@@ -118,7 +119,88 @@ vars.game.planets = [
 						}
 					}
 				}
+			},
+			// Egg spaceship missile.
+			{
+				"chance": 0,
+				"health": 150,
+				"disableBulletKnockback": true,
+				"disableSpaceshipKnockback": true,
+				"disableOffscreenPrevention": true,
+				"disableHitTest": true, // It's not needed, it just creates lag.
+				"disableSpawnMove": true, // So the wall stays intact.
+				"hurtBoss": true,
+				"damage": 15,
+				"cos": "Boss1_0",
+				"size": 7,
+				"initScript": function() {
+					me.anchor.setTo(0)
+				},
+				"mainScript": function() {
+
+				}
+			},
+			// Boss asset 1
+			{
+				"chance": 0,
+				"invunerable": true,
+				"disableBulletKnockback": true,
+				"disableSpaceshipKnockback": true,
+				"disableOffscreenPrevention": true,
+				"disableHitTest": true, // It's not needed, it just creates lag.
+				"disableSpawnMove": true, // So the wall stays intact.
+				"hurtBoss": true,
+				"damage": 25,
+				"cos": "Boss1_1",
+				"size": 7,
+				"initScript": function() {
+					me.anchor.setTo(0)
+				},
+				"mainScript": function() {
+
+				}
 			}
-		]
+			// Boss asset 2
+		],
+		"firstWinReward": 10000,
+		"winReward": 5000,
+		"boss": {
+			"distance": 5000,
+			"scroll": true,
+			"health": 2000,
+			"minigame": {
+				"use": false
+			},
+			"initScript": function() {
+				vars.game.boss.scrollWas = 0
+
+				vars.game.boss.totalSpawnedSections = 0
+			},
+			"mainScript": function() {
+				var bossWidth = 126
+				var bossHeight = 126
+				var indestructibleCount = 0
+
+				if (vars.game.scroll - vars.game.boss.scrollWas > bossWidth) {
+					vars.game.boss.scrollWas = vars.game.scroll
+
+					vars.game.boss.totalSpawnedSections++
+
+					var y = 0
+					while (y < height) {
+						if (Game.rnd.integerInRange(0, 3) != 0) { // Gaps
+							if (Game.rnd.integerInRange(0, 10) == 0 && indestructibleCount < 2 && vars.game.boss.totalSpawnedSections > 1) {
+								clone(vars.game.scroll + width, y, "Boss1_1", 4)
+								indestructibleCount++
+							}
+							else {
+								clone(vars.game.scroll + width, y, "Boss1_0", 3)
+							}
+						}
+						var y = y + bossHeight
+					}
+				}
+			}
+		}
 	}
 ]

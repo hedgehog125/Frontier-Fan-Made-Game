@@ -1,20 +1,11 @@
 // TODO:
 
-
-// For first release...
-
-// Make sure you haven't had full health for a short amount of time when the health restored sound is played. - Maybe not needed?
-// Health bars on enemies.
-// Add bosses into the API.
-// Create a boss for the first planet.
-// Settings menu. (not that important, but has to be done)
-// Continue game button (not that important, but has to be done)
-
 // For later releases...
 
 // Add more planets. <==
 // Create the minigame for the bosses.
-// Different spaceships. (possibly should be in first release).
+// Different spaceships.
+// Settings menu. (not that important, but has to be done)
 
 
 
@@ -69,6 +60,10 @@ Assets = {
 			"id": "Bullet_Plasma",
 			"src": "plasma.png"
 		},
+		{
+			"id": "Warn",
+			"src": "warning.png"
+		},
 		// Enemies.
 		{
 			"id": "Enemy_Rocket_1",
@@ -93,6 +88,24 @@ Assets = {
 		{
 			"id": "Enemy_Rocket_2_Hit",
 			"src": "enemy_rocket_2_hit.png"
+		},
+		// Bosses
+		// Boss 1
+		{
+			"id": "Boss1_0",
+			"src": "boss1_0.png"
+		},
+		{
+			"id": "Boss1_0_Hit",
+			"src": "boss1_0_hit.png"
+		},
+		{
+			"id": "Boss1_1",
+			"src": "boss1_1.png"
+		},
+		{
+			"id": "Boss1_1_Hit",
+			"src": "boss1_1_hit.png"
 		},
 
 		{
@@ -223,6 +236,15 @@ Assets = {
 		},
 
 
+		// Planet selector
+		{
+			"id": "Completed_Planet",
+			"src": "completed_planet.png"
+		},
+		{
+			"id": "Locked_Planet",
+			"src": "locked_planet.png"
+		},
 		{
 			"id": "Planet_1",
 			"src": "planet_1.png"
@@ -250,6 +272,26 @@ Assets = {
 					"repeat": true
 				}
 			]
+		},
+		{
+			"id": "Boss1",
+			"src": "music/boss1.mp3"
+		},
+		{
+			"id": "Boss2",
+			"src": "music/boss2.mp3"
+		},
+		{
+			"id": "Boss3",
+			"src": "music/boss3.mp3"
+		},
+		{
+			"id": "Boss4",
+			"src": "music/boss4.mp3"
+		},
+		{
+			"id": "Boss5",
+			"src": "music/boss5.mp3"
 		},
 		{
 			"id": "Hover_Button",
@@ -290,6 +332,10 @@ Assets = {
 		{
 			"id": "Health_Restored",
 			"src": "sfx/health_restored.mp3"
+		},
+		{
+			"id": "Warn",
+			"src": "sfx/warn.mp3"
 		}
 	],
 	"sprites": [
@@ -365,9 +411,14 @@ Assets = {
 							me.fixedToCamera = true
 							me.inputEnabled = true
 							me.vars.lit = false
+							me.vars.hovering = false
+							me.vars.clicked = false
+							me.vars.wasLit = me.vars.lit
+							me.vars.clickDelay = 0
 
 							me.vars.newSave = function() {
 								vars.game.save = {}
+								vars.game.save.version = vars.game.config.version
 
 								vars.game.save.upgrades = {}
 								vars.game.save.upgraded = []
@@ -388,6 +439,49 @@ Assets = {
 								vars.game.save.progress = {}
 								vars.game.save.progress.completed = 0
 							}
+
+							me.events.onInputDown.add(function(me) {
+								me.vars.lit = true
+								vars.menu.hoverCooldown = true
+								if (! vars.menu.clickCooldown) {
+									me.vars.clicked = true
+
+									var ok = false
+									if (getCookie("Save") != "") {
+										var ok = confirm("Are you sure? You will lose your current progress!")
+									}
+									else {
+										var ok = true // You don't have any progress
+									}
+
+									if (ok) {
+										me.vars.newSave()
+
+										beginFade(5, ["game"], 	0)
+										stopSound("Menu_Music")
+										playSound("Click_Button")
+									}
+									vars.menu.clickCooldown = true
+								}
+							})
+
+							me.events.onInputUp.add(function(me) {
+								vars.menu.clickCooldown = false
+								me.vars.clicked = false
+								vars.menu.hoverCooldown = false
+							})
+
+							me.events.onInputOver.add(function(me) {
+								me.vars.hovering = true
+								vars.menu.hoverCooldown = false
+								me.vars.lit = true
+								me.vars.clicked = true
+							})
+							me.events.onInputOut.add(function(me) {
+								me.vars.hovering = false
+								vars.menu.hoverCooldown = false
+								me.vars.lit = false
+							})
 						},
 						"stateToRun": ["menu", 0]
 					}
@@ -395,32 +489,39 @@ Assets = {
 				"main": [
 					{
  	 					"code": function() {
-							if (me.input.pointerOver()) {
+							if (me.vars.clickDelay == 1) {
+								if (! me.vars.clicked) {
+									me.vars.lit = false
+								}
+							}
+							if (me.vars.hovering) {
 								vars.menu.hoverMessage = "Start a new journey into the Frontier"
-								me.vars.lit = true
+								if (Game.input.activePointer.isDown) {
+									me.vars.clickDelay++
+								}
+								else {
+									me.vars.clickDelay = 0
+									vars.menu.clickCooldown = false
+									me.vars.clicked = false
+								}
 								if (! vars.menu.hoverCooldown) {
-									me.addColor("#EEEEEE", 0)
 									playSound("Hover_Button")
 									vars.menu.hoverCooldown = true
 								}
-								if (Game.input.activePointer.isDown) {
-									if ((! vars.menu.clickCooldown) && (! vars.menu.dragging)) {
-										vars.menu.clickCooldown = true
-
-										me.vars.newSave()
-
-
-										beginFade(5, ["game"], 	0)
-										stopSound("Menu_Music")
-										playSound("Click_Button")
-									}
-								}
 							}
 							else {
+								me.vars.clickDelay = 0
+								me.vars.lit = false
+							}
+
+							if (me.vars.lit != me.vars.wasLit) {
 								if (me.vars.lit) {
-									me.vars.lit = false
+									me.addColor("#EEEEEE", 0)
+								}
+								else {
 									me.addColor("black", 0)
 								}
+								me.vars.wasLit = me.vars.lit
 							}
 							me.cameraOffset.y = vars.menu.logoBob[0] + 300
 						},
@@ -451,6 +552,66 @@ Assets = {
 							me.fixedToCamera = true
 							me.inputEnabled = true
 							me.vars.lit = false
+							me.vars.hovering = false
+							me.vars.clicked = false
+							me.vars.wasLit = me.vars.lit
+							me.vars.clickDelay = 0
+
+							me.events.onInputDown.add(function(me) {
+								me.vars.lit = true
+								vars.menu.hoverCooldown = true
+								if (! vars.menu.clickCooldown) {
+									me.vars.clicked = true
+
+									var saveCode = getCookie("Save")
+
+									if (saveCode == "") {
+										playSound("Deny_Button")
+									}
+									else {
+										var success = true
+										try {
+											JSON.parse(saveCode)
+										}
+										catch (err) {
+											var success = false
+										}
+										if (success) { // The JSON parsed fine
+											playSound("Upgrade")
+											vars.game.save = JSON.parse(saveCode)
+											if (vars.game.config.version != vars.game.save.version) {
+												// Do any necessary updating...
+											}
+
+											vars.menu.switchedMenus = true // So the music doesn't stop/restart
+
+											beginFade(2, ["menu", 1], 0)
+										}
+										else {
+											playSound("Deny_Button")
+										}
+									}
+									vars.menu.clickCooldown = true
+								}
+							})
+
+							me.events.onInputUp.add(function(me) {
+								vars.menu.clickCooldown = false
+								me.vars.clicked = false
+								vars.menu.hoverCooldown = false
+							})
+
+							me.events.onInputOver.add(function(me) {
+								me.vars.hovering = true
+								vars.menu.hoverCooldown = false
+								me.vars.lit = true
+								me.vars.clicked = true
+							})
+							me.events.onInputOut.add(function(me) {
+								me.vars.hovering = false
+								vars.menu.hoverCooldown = false
+								me.vars.lit = false
+							})
 						},
 						"stateToRun": ["menu", 0]
 					}
@@ -458,26 +619,39 @@ Assets = {
 				"main": [
 					{
  	 					"code": function() {
-							if (me.input.pointerOver()) {
+							if (me.vars.clickDelay == 1) {
+								if (! me.vars.clicked) {
+									me.vars.lit = false
+								}
+							}
+							if (me.vars.hovering) {
 								vars.menu.hoverMessage = "Continue your adventure in the Frontier..."
-								me.vars.lit = true
+								if (Game.input.activePointer.isDown) {
+									me.vars.clickDelay++
+								}
+								else {
+									me.vars.clickDelay = 0
+									vars.menu.clickCooldown = false
+									me.vars.clicked = false
+								}
 								if (! vars.menu.hoverCooldown) {
-									me.addColor("#EEEEEE", 0)
 									playSound("Hover_Button")
 									vars.menu.hoverCooldown = true
 								}
-								if (Game.input.activePointer.isDown) {
-									if ((! vars.menu.clickCooldown) && (! vars.menu.dragging)) {
-										vars.menu.clickCooldown = true
-										playSound("Click_Button")
-									}
-								}
 							}
 							else {
+								me.vars.clickDelay = 0
+								me.vars.lit = false
+							}
+
+							if (me.vars.lit != me.vars.wasLit) {
 								if (me.vars.lit) {
-									me.vars.lit = false
+									me.addColor("#EEEEEE", 0)
+								}
+								else {
 									me.addColor("black", 0)
 								}
+								me.vars.wasLit = me.vars.lit
 							}
 							me.cameraOffset.y = vars.menu.logoBob[0] + 335
 						},
@@ -496,6 +670,114 @@ Assets = {
 			}
 		},
 		// Continue game
+		{
+			"scripts": {
+				"init": [
+					{
+ 	 					"code": function() {
+							me.x = Game.width / 2
+							me.y = 365
+
+							me.anchor.setTo(0.5)
+							me.fixedToCamera = true
+							me.inputEnabled = true
+							me.vars.lit = false
+							me.vars.hovering = false
+							me.vars.clicked = false
+							me.vars.wasLit = me.vars.lit
+							me.vars.clickDelay = 0
+
+							me.events.onInputDown.add(function(me) {
+								me.vars.lit = true
+								vars.menu.hoverCooldown = true
+								if (! vars.menu.clickCooldown) {
+									me.vars.clicked = true
+
+									if (Sprites.CreatedBy_Text.visible) {
+										Sprites.CreatedBy_Text.visible = false
+									}
+									else {
+										Sprites.CreatedBy_Text.visible = true
+									}
+									vars.menu.clickCooldown = true
+								}
+							})
+
+							me.events.onInputUp.add(function(me) {
+								vars.menu.clickCooldown = false
+								me.vars.clicked = false
+								vars.menu.hoverCooldown = false
+							})
+
+							me.events.onInputOver.add(function(me) {
+								me.vars.hovering = true
+								vars.menu.hoverCooldown = false
+								me.vars.lit = true
+								me.vars.clicked = true
+							})
+							me.events.onInputOut.add(function(me) {
+								me.vars.hovering = false
+								vars.menu.hoverCooldown = false
+								me.vars.lit = false
+							})
+						},
+						"stateToRun": ["menu", 0]
+					}
+				],
+				"main": [
+					{
+ 	 					"code": function() {
+							if (me.vars.clickDelay == 1) {
+								if (! me.vars.clicked) {
+									me.vars.lit = false
+								}
+							}
+							if (me.vars.hovering) {
+								vars.menu.hoverMessage = "Credits"
+								if (Game.input.activePointer.isDown) {
+									me.vars.clickDelay++
+								}
+								else {
+									me.vars.clickDelay = 0
+									vars.menu.clickCooldown = false
+									me.vars.clicked = false
+								}
+								if (! vars.menu.hoverCooldown) {
+									playSound("Hover_Button")
+									vars.menu.hoverCooldown = true
+								}
+							}
+							else {
+								me.vars.clickDelay = 0
+								me.vars.lit = false
+							}
+
+							if (me.vars.lit != me.vars.wasLit) {
+								if (me.vars.lit) {
+									me.addColor("#EEEEEE", 0)
+								}
+								else {
+									me.addColor("black", 0)
+								}
+								me.vars.wasLit = me.vars.lit
+							}
+							me.cameraOffset.y = vars.menu.logoBob[0] + 365
+						},
+						"stateToRun": ["menu", 0]
+					}
+				]
+			},
+			"id": "Credits_Button",
+			"x": 0,
+			"y": 0,
+			"type": "text",
+			"text": "Credits",
+			"settings": {
+				"font": "15pt Helvetica",
+				"fill": "black"
+			}
+		},
+		// Credits button
 		{
 			"scripts": {
 				"init": [
@@ -532,6 +814,7 @@ Assets = {
 		},
 		// Hover text
 		{
+			/*
 			"scripts": {
 				"init": [
 					{
@@ -584,6 +867,7 @@ Assets = {
 					}
 				]
 			},
+			*/ // FPS is hidden
 			"id": "FPS_Text",
 			"x": 0,
 			"y": 0,
@@ -595,6 +879,76 @@ Assets = {
 			"type": "text"
 		},
 		// FPS
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.fixedToCamera = true
+							me.visible = false
+						},
+						"stateToRun": ["menu", 0]
+					}
+				]
+			},
+			"id": "CreatedBy_Text",
+			"x": 0,
+			"y": 415,
+			"text": "(see https://hedgehog125.github.io/Frontier-Fan-Made-Game/Licence.md)",
+			"settings": {
+				"font": "10pt Helvetica",
+				"fill": "black"
+			},
+			"type": "text"
+		},
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.fixedToCamera = true
+							me.anchor.setTo(1)
+						},
+						"stateToRun": ["menu", 0]
+					}
+				]
+			},
+			"id": "By_Text",
+			"x": 800,
+			"y": 450,
+			"text": "hedgehog125",
+			"settings": {
+				"font": "8pt Helvetica",
+				"fill": "black"
+			},
+			"type": "text"
+		},
+		// Credits text
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							vars.game.startedPlaying = true
+							me.anchor.setTo(0.5)
+
+							me.visible = false
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Game_Saved_Message",
+			"x": 0,
+			"y": 0,
+			"text": "Game saved",
+			"settings": {
+				"font": "10pt Helvetica",
+				"fill": "white"
+			},
+			"type": "text"
+		},
+		// Game saved message
 
 		// World selector | Upgrades
 
@@ -888,11 +1242,15 @@ Assets = {
 							})
 							me.events.onInputDown.add(function(sprite) {
 								me = sprite
-
-								playSound("Click_Button")
-
 								me.vars.hovering = true
-								me.vars.JSON.clickfunc()
+
+								if (me.vars.JSON.active) {
+									playSound("Click_Button")
+									me.vars.JSON.clickfunc()
+								}
+								else {
+									playSound("Deny_Button")
+								}
 							})
 							me.events.onInputUp.add(function(sprite) {
 								me.vars.clicked = false
@@ -955,6 +1313,248 @@ Assets = {
 		// Content
 
 		// Game
+
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.vars.flashCooldown = -1
+
+							setHealth = function(health, disableFlash) {
+								vars.game.health = health
+
+								var execute = Sprites["HealthBar"]
+
+								execute.ctx.clearRect(0, 0, execute.width, execute.height)
+								execute.ctx.lineCap = "round"
+
+								execute.ctx.lineWidth = 10
+								if (health == vars.game.save.upgrades.maxHealth && (! disableFlash)) {
+									execute.ctx.strokeStyle = "White"
+
+									playSound("Health_Restored")
+									execute.vars.flashCooldown = 35
+								}
+								else {
+									execute.ctx.strokeStyle = "#B9B9B9"
+								}
+								execute.ctx.beginPath()
+								execute.ctx.moveTo(5, execute.height / 2)
+								execute.ctx.lineTo(execute.width - 5, execute.height / 2)
+								execute.ctx.stroke()
+
+								if (((vars.game.health / vars.game.save.upgrades.maxHealth) * 700) > 5) {
+									execute.ctx.lineWidth = 5
+									execute.ctx.strokeStyle = "red"
+									execute.ctx.beginPath()
+									execute.ctx.moveTo(5, execute.height / 2)
+									execute.ctx.lineTo(Math.max(((vars.game.health / vars.game.save.upgrades.maxHealth) * 700) - 5, 5), execute.height / 2)
+									execute.ctx.stroke()
+								}
+
+							}
+							vars.game.health = vars.game.save.upgrades.maxHealth
+							setHealth(vars.game.health, true)
+
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+							me.dirty = true
+
+							if (me.vars.flashCooldown == 0) {
+								me.vars.flashCooldown = -1
+
+								setHealth(vars.game.health, true)
+							}
+							else {
+								me.vars.flashCooldown--
+							}
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "HealthBar",
+			"type": "canvas",
+			"width": 700,
+			"height": 10
+		},
+		// Health bar
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": null,
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+							me.bringToTop()
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "HealthBar_Frame",
+			"x": 100,
+			"y": 0,
+			"type": "canvasFrame",
+			"bitmapID": "HealthBar",
+			"fixedToCamera": true
+		},
+		// Health bar sprite
+
+		{
+			"scripts": {
+				"main": [
+					{
+						"code": null,
+						"stateToRun": ["game"] // So the clone's scripts get run
+					}
+				]
+			},
+			"clonescripts": {
+				"init": [
+					function() {
+						me.width = 100
+						me.height = 10
+
+						me.vars.idleTime = 0
+						me.vars.wasBeingDestroyed = false
+						me.vars.dataForClone = dataForClone
+						me.vars.parent = me.vars.dataForClone.parent
+						me.vars.parentName = me.vars.parent.cloneOf + "#" + me.vars.parent.cloneID
+						me.vars.myName = me.cloneOf + "#" + me.cloneID
+
+						functionForClone = [
+							function() {
+								return me
+							},
+							"before"
+						]
+						me.vars.x = getCentreX(me.vars.parentName)
+						me.vars.y = getTopY(me.vars.parentName) - 10
+
+						me.vars.execute = cloneSprite(me.vars.x, me.vars.y, null, "Enemy_HealthBar_Frames", me, null, null, myJSON.width, myJSON.height, false, me.vars.myName)
+
+						me.vars.setHealth = function(health, maxHealth, sprite, overideIdleReset) {
+							if (! overideIdleReset) {
+								sprite.vars.idleTime = 0 // Reset the idle time
+							}
+
+							var execute = sprite
+
+							execute.ctx.clearRect(0, 0, execute.width, execute.height)
+							execute.ctx.lineCap = "round"
+
+							execute.ctx.lineWidth = 10
+							execute.ctx.strokeStyle = "#B9B9B9"
+							execute.ctx.beginPath()
+							execute.ctx.moveTo(5, execute.height / 2)
+							execute.ctx.lineTo(execute.width - 5, execute.height / 2)
+							execute.ctx.stroke()
+
+							if (health > 0) {
+								execute.ctx.lineWidth = 5
+								execute.ctx.strokeStyle = "red"
+								execute.ctx.beginPath()
+								execute.ctx.moveTo(5, execute.height / 2)
+								execute.ctx.lineTo(Math.max(((health / maxHealth) * 100) - 5, 5), execute.height / 2)
+								execute.ctx.stroke()
+							}
+
+						}
+						me.vars.setHealth(me.vars.dataForClone.health, me.vars.dataForClone.maxHealth, me)
+					}
+				],
+				"main": [
+					function() {
+						me.dirty = true
+
+						if (! me.vars.destroyed) {
+							me.vars.x = getCentreX(me.vars.parentName)
+							me.vars.y = getTopY(me.vars.parentName) - 10
+						}
+
+
+
+						if (me.vars.idleTime > 200 || me.vars.destroyed) {
+							me.vars.execute.alpha = me.vars.execute.alpha - (1 / 50)
+							if (! me.vars.wasBeingDestroyed) {
+								me.vars.wasBeingDestroyed = true
+								if (me.vars.destroyed) {
+									me.vars.setHealth(0, me.vars.dataForClone.maxHealth, me, true)
+								}
+							}
+							if (me.vars.execute.alpha <= 0) { // Delete the sprite and the canvas
+								deleteClone(me.vars.execute.cloneID, me.vars.execute.cloneOf)
+								deleteClone()
+								if (! me.vars.destroyed) { // So the parent doesn't try to communicate with a destroyed healthbar
+									me.vars.parent.vars.healthbar = null // So it creates a new one when needed
+								}
+							}
+						}
+						else {
+							if (me.vars.execute.alpha != 1) {
+								me.vars.execute.alpha = 1
+								me.vars.wasBeingDestroyed = false
+							}
+						}
+
+						me.vars.idleTime++
+					}
+				]
+			},
+			"id": "Enemy_HealthBars",
+			"type": "canvas",
+			"width": 100,
+			"height": 10
+		},
+		// Enemy health bars
+		{
+			"scripts": {
+				"main": [
+					{
+						"code": null,
+						"stateToRun": ["game"] // So the clone's scripts get run
+					}
+				]
+			},
+			"clonescripts": {
+				"init": [
+					function() {
+						me.anchor.setTo(0.5)
+
+						me.width = 100
+						me.height = 10
+
+						me.vars.parent = dataForClone
+					}
+				],
+				"main": [
+					function() {
+						me.bringToTop()
+
+						me.x = me.vars.parent.vars.x
+						me.y = me.vars.parent.vars.y
+					}
+				]
+			},
+			"id": "Enemy_HealthBar_Frames",
+			"x": 0,
+			"y": 0,
+			"type": "canvasFrame",
+			"bitmapID": "Enemy_HealthBars",
+			"fixedToCamera": false
+		},
+		// Enemy health bar sprites
 
 		{
 			"scripts": {
@@ -1041,11 +1641,15 @@ Assets = {
 							me.vars.animationFrame = 0
 							vars.game.flash = 0
 							vars.game.deathAnimationTick = 0
-							vars.game.health = vars.game.save.upgrades.maxHealth
 							vars.game.fireCooldown = 0
 
 							me.fixedToCamera = true
 							me.anchor.setTo(0.5)
+							me.vars.won = false
+							me.vars.wonAnimationDone = false
+							me.vars.winVel = 0
+							vars.game.boss.winAnimationTick = 0
+
 							enableTouching()
 						},
 						"stateToRun": ["game"]
@@ -1054,7 +1658,7 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							if (vars.game.deathAnimationTick == 0) {
+							if (vars.game.deathAnimationTick == 0 && (! me.vars.won)) {
 								if (vars.game.zoomAnimation == 0) {
 									// Stop me from going offscreen.
 									var glideX = inX
@@ -1098,6 +1702,26 @@ Assets = {
 											enemySprite.vars.hp = enemySprite.vars.hp - 1
 											vars.game.save.money = vars.game.save.money + 1
 											me.vars.moneySplash(1)
+
+											if (enemySprite.vars.hp > 0) {
+												if (enemySprite.vars.healthbar != null) { // Set the healthbar's health
+													enemySprite.vars.healthbar.vars.setHealth(enemySprite.vars.hp, enemySprite.vars.JSON.health, enemySprite.vars.healthbar)
+												}
+												else {
+													functionForClone = [
+														function() {
+															return me
+														},
+														"before"
+													]
+													enemySprite.vars.healthbar = cloneSprite(null, null, null, "Enemy_HealthBars", {
+														"health": enemySprite.vars.hp,
+														"maxHealth": enemySprite.vars.JSON.health,
+														"parent": enemySprite
+													}, null, null, 100, 10)
+												}
+											}
+
 										}
 										setHealth(vars.game.health - damage)
 									}
@@ -1136,28 +1760,81 @@ Assets = {
 								me.scale.setTo(vars.game.zoom * 2, vars.game.zoom * 2)
 							}
 							else {
-								if (vars.game.deathAnimationTick !== "done") {
-									if (((vars.game.deathAnimationTick - 1) % 10) == 0) {
-										playSound("Boom")
-										cloneSprite(me.x + (Game.rnd.integerInRange(-(me.width / 2), me.width / 2)), me.y + (Game.rnd.integerInRange(-(me.height / 2), me.height / 2)), "Explosion", "Explosions", {
-											"size": Game.rnd.integerInRange(30, 40)
-										})
-									}
-									me.loadTexture("Rocket_1#" + Math.floor(me.vars.animationFrame))
-									me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
-									if (Math.floor(me.vars.animationFrame) > 3) {
-										me.vars.animationFrame = 0
-									}
-									vars.game.deathAnimationTick++
-									me.alpha = 1 - (vars.game.deathAnimationTick / 200)
-									if (me.alpha <= 0) {
-										vars.game.deathAnimationTick = "done"
+								if (! me.vars.won) {
+									if (vars.game.deathAnimationTick !== "done") {
+										if (((vars.game.deathAnimationTick - 1) % 10) == 0) {
+											playSound("Boom")
+											cloneSprite(me.x + (Game.rnd.integerInRange(-(me.width / 2), me.width / 2)), me.y + (Game.rnd.integerInRange(-(me.height / 2), me.height / 2)), "Explosion", "Explosions", {
+												"size": Game.rnd.integerInRange(30, 40)
+											})
+										}
+										me.loadTexture("Rocket_1#" + Math.floor(me.vars.animationFrame))
+										me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
+										if (Math.floor(me.vars.animationFrame) > 3) {
+											me.vars.animationFrame = 0
+										}
+										vars.game.deathAnimationTick++
+										me.alpha = 1 - (vars.game.deathAnimationTick / 200)
+										if (me.alpha <= 0) {
+											vars.game.deathAnimationTick = "done"
 
-										stopSound("Game_Music")
-										beginFade(1, ["menu", 1], 0)
+											Loaded.snds.Game_Music.fadeOut()
+											Loaded.snds.Boss1.fadeOut()
+											Loaded.snds.Boss2.fadeOut()
+											Loaded.snds.Boss3.fadeOut()
+											Loaded.snds.Boss4.fadeOut()
+											Loaded.snds.Boss5.fadeOut()
+
+											vars.game.saveDelay = 2 // Save progress in a couple of seconds
+											vars.game.muteSaveSound = true
+
+											beginFade(1, ["menu", 1], 0)
+										}
 									}
 								}
 							}
+							if (vars.game.scroll >= vars.game.planets[vars.game.currentPlanet].boss.distance) {
+								if (vars.game.boss.health <= 0) {
+									vars.game.boss.winAnimationTick++
+									if (! me.vars.won) {
+										Loaded.snds.Game_Music.fadeOut()
+										Loaded.snds.Boss1.fadeOut()
+										Loaded.snds.Boss2.fadeOut()
+										Loaded.snds.Boss3.fadeOut()
+										Loaded.snds.Boss4.fadeOut()
+										Loaded.snds.Boss5.fadeOut()
+										me.vars.won = true
+									}
+									if (vars.game.boss.winAnimationTick == 60) { // Wait a bit before playing the sound
+										playSound("Boom") // Strangely this creates a zoom sound
+									}
+									if (vars.game.boss.winAnimationTick > 60) { // Wait a bit before zooming off
+										if (me.x > vars.game.scroll + Game.width + me.width) {
+											if (! me.vars.wonAnimationDone) {
+												me.vars.wonAnimationDone = true
+
+
+												if ((vars.game.currentPlanet + 1) > vars.game.save.progress.completed) {
+													vars.game.save.progress.completed = vars.game.currentPlanet + 1
+													vars.game.save.money = vars.game.save.money + vars.game.planets[vars.game.currentPlanet].firstWinReward
+												}
+												vars.game.save.money = vars.game.save.money + vars.game.planets[vars.game.currentPlanet].winReward
+
+
+												vars.game.saveDelay = 5 // Save progress in a few seconds
+												vars.game.muteSaveSound = true
+
+												beginFade(0.5, ["menu", 1], 0)
+											}
+										}
+										me.vars.winVel = me.vars.winVel + 5
+
+										me.cameraOffset.x = me.cameraOffset.x + me.vars.winVel
+										me.vars.winVel = me.vars.winVel * 0.99
+									}
+								}
+							}
+
 
 							me.bringToTop()
 						},
@@ -1243,7 +1920,7 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							if (vars.game.deathAnimationTick == 0) {
+							if (vars.game.deathAnimationTick == 0 && vars.game.boss.winAnimationTick == 0) {
 								if (vars.game.fireCooldown > vars.game.save.upgrades.fireRate) {
 									var weapon = me.vars.weaponConfig[me.vars.weaponSystem]
 
@@ -1345,13 +2022,15 @@ Assets = {
 								if (spriteCloneIds.Enemy_Rockets[i] != undefined) {
 									var c = Sprites[spriteCloneIds.Enemy_Rockets[i]]
 									var dis = Math.abs(c.x - me.x) + Math.abs(c.y - me.y)
-									if (dis <= vars.game.save.upgrades.homing) {
-										if (dis < closestDis) {
-											var tooClose = dis <= Math.max(Sprites.Rocket.width, Sprites.Rocket.height) * 3
-											if ((Game.rnd.integerInRange(0, 1) == 0) || (closest == null) || tooClose) { // Add some randomness.
-												if (me.vars.needed(c.cloneID) || tooClose) {
-													var closest = c
-													var closestDis = dis
+									if (! c.vars.JSON.invunerable) { // Don't home to them if they're invunerable!
+										if (dis <= vars.game.save.upgrades.homing) {
+											if (dis < closestDis) {
+												var tooClose = dis <= Math.max(Sprites.Rocket.width, Sprites.Rocket.height) * 3
+												if ((Game.rnd.integerInRange(0, 1) == 0) || (closest == null) || tooClose) { // Add some randomness.
+													if (me.vars.needed(c.cloneID) || tooClose) {
+														var closest = c
+														var closestDis = dis
+													}
 												}
 											}
 										}
@@ -1409,8 +2088,12 @@ Assets = {
 				"init": [
 					{
 						"code": function() {
+							vars.game.boss.health = vars.game.planets[vars.game.currentPlanet].boss.health
+
 							vars.game.spawnTick = 0
 							vars.game.spawnRate = 200
+							vars.game.boss.warningTick = 0
+
 							me.visible = false
 
 
@@ -1443,25 +2126,66 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							if (vars.game.spawnTick > vars.game.spawnRate) {
-								vars.game.spawnTick = 0 - (Game.rnd.integerInRange(0 - (vars.game.spawnRate / 5), vars.game.spawnRate / 5)) // Add some randomness
+							if (vars.game.scroll < vars.game.planets[vars.game.currentPlanet].boss.distance) {
+								if (vars.game.spawnTick > vars.game.spawnRate) {
+									vars.game.spawnTick = 0 - (Game.rnd.integerInRange(0 - (vars.game.spawnRate / 5), vars.game.spawnRate / 5)) // Add some randomness
 
 
-								var rnd = Game.rnd.between(0, 10000)
-								var i = 0
-								for (i in me.vars.chancesOrder) {
-									var a = me.vars.chancesOrder[i]
-									var c = vars.game.planets[vars.game.currentPlanet].enemies[a]
-									if (rnd <= me.vars.chances[i]) {
-										clone(Game.world.width, Game.rnd.between(0, Game.height), c.cos, a)
-										break
+									var rnd = Game.rnd.between(0, 10000)
+									var i = 0
+									for (i in me.vars.chancesOrder) {
+										var a = me.vars.chancesOrder[i]
+										var c = vars.game.planets[vars.game.currentPlanet].enemies[a]
+										if (rnd <= me.vars.chances[i]) {
+											clone(Game.world.width, Game.rnd.between(0, Game.height), c.cos, a)
+											break
+										}
+										var rnd = rnd - me.vars.chances[i]
 									}
-									var rnd = rnd - me.vars.chances[i]
+								}
+								else {
+									if (vars.game.zoomAnimation == 0) {
+										vars.game.spawnTick = vars.game.spawnTick + (Math.floor(vars.game.scroll / 1000)) + 1
+									}
 								}
 							}
 							else {
-								if (vars.game.zoomAnimation == 0) {
-									vars.game.spawnTick = vars.game.spawnTick + (Math.floor(vars.game.scroll / 1000)) + 1
+								if (vars.game.boss.warningTick == 0) { // Just started, so make the music faster
+									stopSound("Game_Music")
+									Loaded.snds.Boss1.currentTime = (Loaded.snds.Game_Music.currentTime / Loaded.snds.Game_Music.duration) * Loaded.snds.Boss1.duration // Continue playing at the equivalent in this file
+									playSound("Boss1", true)
+
+									vars.game.boss.lastStage = 1
+								}
+								if (vars.game.boss.warningTick < 400) {
+									vars.game.boss.warningTick++
+									if ((vars.game.boss.warningTick % 30) == 0) {
+										playSound("Warn")
+									}
+								}
+								else {
+									if (vars.game.boss.warningTick == 400) { // Just ended warning, so run the init script...
+										vars.game.planets[vars.game.currentPlanet].boss.initScript()
+										vars.game.boss.warningTick++
+									}
+									vars.game.planets[vars.game.currentPlanet].boss.mainScript()
+
+									var currentStage = 6 - Math.round((vars.game.boss.health / vars.game.planets[vars.game.currentPlanet].boss.health) * 5)
+									var currentStage = Math.max(currentStage, 1)
+									var currentStage = Math.min(currentStage, 5)
+
+									if (vars.game.deathAnimationTick == 0) {
+										if (vars.game.boss.lastStage != currentStage) {
+											var newSound = "Boss" + currentStage
+											var oldSound = "Boss" + vars.game.boss.lastStage
+
+											stopSound(oldSound)
+											Loaded.snds.Boss1.currentTime = (Loaded.snds[oldSound].currentTime / Loaded.snds[oldSound].duration) * Loaded.snds[newSound].duration // Continue playing at the equivalent in this file
+											playSound(newSound, true)
+
+											vars.game.boss.lastStage = currentStage
+										}
+									}
 								}
 							}
 						},
@@ -1488,6 +2212,7 @@ Assets = {
 						me.vars.noTouchTime = 0
 						me.vars.xVel = 0
 						me.vars.firstTouching = null
+						me.vars.healthbar = null
 
 						if (me.vars.JSON.size != undefined) {
 							me.scale.setTo(me.vars.JSON.size)
@@ -1495,18 +2220,19 @@ Assets = {
 
 						me.anchor.setTo(0, 0.5)
 
-						if (me.y < Game.world.centerY) { // Check I'm not too high or low.
-							if (me.y - (me.height / 2) - 10 < 0) {
-								me.y = (me.height / 2) + 10
+						if (! me.vars.JSON.disableOffscreenPrevention) {
+							if (me.y < Game.world.centerY) { // Check I'm not too high or low.
+								if (me.y - (me.height / 2) - vars.game.config.minY < 0) {
+									me.y = (me.height / 2) + vars.game.config.minY
+								}
 							}
-						}
-						else {
-							if (me.y + (me.height / 2) > Game.height) {
-								me.y = Game.height - (me.height / 2)
+							else {
+								if (me.y + (me.height / 2) > Game.height) {
+									me.y = Game.height - (me.height / 2)
+								}
 							}
 						}
 
-						me.vars.shown = false
 
 						if (! me.vars.JSON.disableSpawnMove) { // To stop me spawning inside of other spaceships and getting hurt.
 							if (touchingClones("Enemy_Rockets")) {
@@ -1522,16 +2248,6 @@ Assets = {
 				],
 				"main": [
 					function() {
-						if (me.x < vars.game.scroll + Game.width) {
-							me.vars.shown = true
-						}
-						if (! me.vars.shown) { // Make sure I haven't been shown, otherwise it will be weird when I disappear.
-							if (me.x > vars.game.scroll + Game.width + me.width + 100) { // I've gone too far forwards, so forget that I ever existed.
-								deleteClone()
-								return
-							}
-						}
-
 						vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["mainScript"]()
 
 						me.vars.moneySplash = function(amount) {
@@ -1541,32 +2257,71 @@ Assets = {
 							})
 						}
 
-						if (touchingClones("Bullet")) {
-							if (me.vars.hitFlash == 0) {
-								if (getCentreX() > getCentreX(touchInfo)) { // Knock me back.
-									me.vars.xVel = me.vars.xVel + 2
+						if (! me.vars.JSON.invunerable) {
+							if (touchingClones("Bullet")) {
+								if (me.vars.hitFlash == 0) {
+									if (! me.vars.JSON.disableBulletKnockback) {
+										if (getCentreX() > getCentreX(touchInfo)) { // Knock me back.
+											me.vars.xVel = me.vars.xVel + 2
+										}
+										else {
+											me.vars.xVel = me.vars.xVel - 2
+										}
+									}
+
+									deleteCloneByName(touchInfo) // Destroy the bullet that hit me.
+
+									var healthWas = me.vars.hp
+									var damage = vars.game.save.upgrades.fireDamage
+
+									me.vars.hp = me.vars.hp - vars.game.save.upgrades.fireDamage
+									me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
+									me.vars.hitFlash = 10
+									if (me.vars.hp > 0) {
+										playSound("Hit")
+										vars.game.save.money = vars.game.save.money + vars.game.save.upgrades.fireDamage // Money
+										me.vars.moneySplash(vars.game.save.upgrades.fireDamage)
+										if (me.vars.JSON.hurtBoss) {
+											vars.game.boss.health = vars.game.boss.health - damage
+										}
+
+										if (me.vars.healthbar != null) { // Set the healthbar's health
+											me.vars.healthbar.vars.setHealth(me.vars.hp, me.vars.JSON.health, me.vars.healthbar)
+										}
+										else {
+											functionForClone = [
+												function() {
+													return me
+												},
+												"before"
+											]
+											me.vars.healthbar = cloneSprite(null, null, null, "Enemy_HealthBars", {
+												"health": me.vars.hp,
+												"maxHealth": me.vars.JSON.health,
+												"parent": me
+											}, null, null, 100, 10)
+										}
+									}
+									else {
+										vars.game.save.money = vars.game.save.money + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)) // Money
+										me.vars.moneySplash(vars.game.save.upgrades.fireDamage - (0 - me.vars.hp))
+										if (me.vars.JSON.hurtBoss) {
+											vars.game.boss.health = vars.game.boss.health - healthWas
+										}
+
+										if (me.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
+											me.vars.healthbar.vars.destroyed = true
+										}
+									}
 								}
 								else {
-									me.vars.xVel = me.vars.xVel - 2
-								}
-
-								deleteCloneByName(touchInfo) // Destroy the bullet that hit me.
-
-								me.vars.hp = me.vars.hp - vars.game.save.upgrades.fireDamage
-								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
-								me.vars.hitFlash = 10
-								if (me.vars.hp > 0) {
-									playSound("Hit")
-									vars.game.save.money = vars.game.save.money + vars.game.save.upgrades.fireDamage // Money
-									me.vars.moneySplash(vars.game.save.upgrades.fireDamage)
-								}
-								else {
-									vars.game.save.money = vars.game.save.money + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)) // Money
-									me.vars.moneySplash(vars.game.save.upgrades.fireDamage - (0 - me.vars.hp))
+									deleteCloneByName(touchInfo)
 								}
 							}
-							else {
-								deleteCloneByName(touchInfo)
+						}
+						else {
+							if (touchingClones("Bullet")) {
+								deleteCloneByName(touchInfo) // Just delete the bullet without hurting me.
 							}
 						}
 						// So enemy bullets don't blow up the spaceship they were fired from!
@@ -1599,79 +2354,149 @@ Assets = {
 								me.vars.escaped = true
 							}
 						}
-						var criteria = function(hit) {
-							return hit.vars.escaped && hit.vars.hitFlash == 0
-						}
-						if (touchingClones("Enemy_Rockets", criteria) && me.vars.escaped && me.vars.hitFlash == 0 && (! me.vars.moveBack)) {
-							var planetEnemies = vars.game.planets[vars.game.currentPlanet]["enemies"]
-							var hitRocket = Sprites[touchInfo]
-
-							var bonusDamage = 2 // Extra damage because it's hard to get them to crash into each other.
-
-
-							var damage = planetEnemies[hitRocket.vars.type].damage * bonusDamage
-
-							var gainMoney = 0
-
-							if (me.vars.hp - damage < 0) {
-								var gainMoney = gainMoney + (me.vars.hp * bonusDamage)
-								me.vars.hp = me.vars.hp - damage // Damage me
+						if ((! me.vars.JSON.disableHitTest) && me.vars.escaped && me.vars.hitFlash == 0 && (! me.vars.moveBack)) {
+							var criteria = function(hit) {
+								return hit.vars.escaped && hit.vars.hitFlash == 0 && (! hit.vars.JSON.disableHitTest)
 							}
-							else {
-								me.vars.hp = me.vars.hp - damage // Damage me.
-								var gainMoney = gainMoney + (damage + bonusDamage)
-							}
+							if (touchingClones("Enemy_Rockets", criteria)) {
+								var planetEnemies = vars.game.planets[vars.game.currentPlanet]["enemies"]
+								var hitRocket = Sprites[touchInfo]
 
-							var damage = planetEnemies[me.vars.type].damage * bonusDamage
+								var bonusDamage = 2 // Extra damage because it's hard to get them to crash into each other.
 
-							if (hitRocket.vars.hp - damage < 0) {
-								var gainMoney = gainMoney + (hitRocket.vars.hp * bonusDamage)
-								hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me
-							}
-							else {
-								hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me.
-								var gainMoney = gainMoney + (damage * bonusDamage)
-							}
 
-							vars.game.save.money = vars.game.save.money + gainMoney // Get money.
-							me.vars.moneySplash(gainMoney)
+								var damage = planetEnemies[hitRocket.vars.type].damage * bonusDamage
 
-							if (getCentreX() > getCentreX(touchInfo)) { // Propel us away from each other.
-								me.vars.xVel = me.vars.xVel + 5
-								hitRocket.vars.xVel = hitRocket.vars.xVel - 5
-							}
-							else {
-								me.vars.xVel = me.vars.xVel - 5
-								hitRocket.vars.xVel = hitRocket.vars.xVel + 5
-							}
+								var gainMoney = 0
 
-							me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
-							hitRocket.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][hitRocket.vars.type]["cos"] + "_Hit")
-							me.vars.hitFlash = 10
-							hitRocket.vars.hitFlash = 10
+								if (! me.vars.JSON.invunerable) {
+									if (me.vars.hp - damage < 0) {
+										var gainMoney = gainMoney + (me.vars.hp * bonusDamage)
+										me.vars.hp = me.vars.hp - damage // Damage me
+										if (me.vars.JSON.hurtBoss) {
+											vars.game.boss.health = vars.game.boss.health - me.vars.hp
+										}
 
-							if (me.width + me.height > hitRocket.width + hitRocket.height) {
-								if (me.width > me.height) {
-									var explosionWidth = me.width
+										if (me.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
+											me.vars.healthbar.vars.destroyed = true
+										}
+									}
+									else {
+										me.vars.hp = me.vars.hp - damage // Damage me.
+										var gainMoney = gainMoney + (damage + bonusDamage)
+										if (me.vars.JSON.hurtBoss) {
+											vars.game.boss.health = vars.game.boss.health - damage
+										}
+
+										if (me.vars.healthbar != null) { // Set the healthbar's health
+											me.vars.healthbar.vars.setHealth(me.vars.hp, me.vars.JSON.health, me.vars.healthbar)
+										}
+										else {
+											functionForClone = [
+												function() {
+													return me
+												},
+												"before"
+											]
+											me.vars.healthbar = cloneSprite(null, null, null, "Enemy_HealthBars", {
+												"health": me.vars.hp,
+												"maxHealth": me.vars.JSON.health,
+												"parent": me
+											}, null, null, 100, 10)
+										}
+									}
+								}
+
+
+								var damage = planetEnemies[me.vars.type].damage * bonusDamage
+
+								if (! hitRocket.vars.JSON.invunerable) {
+									if (hitRocket.vars.hp - damage < 0) {
+										var gainMoney = gainMoney + (hitRocket.vars.hp * bonusDamage)
+										hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me
+										if (hitRocket.vars.JSON.hurtBoss) {
+											vars.game.boss.health = vars.game.boss.health - hitRocket.vars.hp
+										}
+
+										if (hitRocket.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
+											hitRocket.vars.healthbar.vars.destroyed = true
+										}
+									}
+									else {
+										hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me.
+										var gainMoney = gainMoney + (damage * bonusDamage)
+										if (hitRocket.vars.JSON.hurtBoss) {
+											vars.game.boss.health = vars.game.boss.health - damage
+										}
+
+										if (hitRocket.vars.healthbar != null) { // Set the healthbar's health
+											hitRocket.vars.healthbar.vars.setHealth(hitRocket.vars.hp, hitRocket.vars.JSON.health, hitRocket.vars.healthbar)
+										}
+										else {
+											functionForClone = [
+												function() {
+													return me
+												},
+												"before"
+											]
+											hitRocket.vars.healthbar = cloneSprite(null, null, null, "Enemy_HealthBars", {
+												"health": hitRocket.vars.hp,
+												"maxHealth": hitRocket.vars.JSON.health,
+												"parent": hitRocket
+											}, null, null, 100, 10)
+										}
+									}
+								}
+
+								vars.game.save.money = vars.game.save.money + gainMoney // Get money.
+								me.vars.moneySplash(gainMoney)
+
+								if (getCentreX() > getCentreX(touchInfo)) { // Propel us away from each other.
+									if (! me.vars.JSON.disableSpaceshipKnockback) {
+										me.vars.xVel = me.vars.xVel + 5
+									}
+									if (! hitRocket.vars.JSON.disableSpaceshipKnockback) {
+										hitRocket.vars.xVel = hitRocket.vars.xVel - 5
+									}
 								}
 								else {
-									var explosionWidth = me.height
+									if (! me.vars.JSON.disableSpaceshipKnockback) {
+										me.vars.xVel = me.vars.xVel - 5
+									}
+									if (! hitRocket.vars.JSON.disableSpaceshipKnockback) {
+										hitRocket.vars.xVel = hitRocket.vars.xVel + 5
+									}
 								}
-							}
-							else {
-								if (hitRocket.width > hitRocket.height) {
-									var explosionWidth = hitRocket.width
+
+								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
+								hitRocket.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][hitRocket.vars.type]["cos"] + "_Hit")
+								me.vars.hitFlash = 10
+								hitRocket.vars.hitFlash = 10
+
+								if (me.width + me.height > hitRocket.width + hitRocket.height) {
+									if (me.width > me.height) {
+										var explosionWidth = me.width
+									}
+									else {
+										var explosionWidth = me.height
+									}
 								}
 								else {
-									var explosionWidth = hitRocket.height
+									if (hitRocket.width > hitRocket.height) {
+										var explosionWidth = hitRocket.width
+									}
+									else {
+										var explosionWidth = hitRocket.height
+									}
 								}
+
+
+								cloneSprite(me.x, me.y, "Explosion", "Explosions", {
+									"size": explosionWidth
+								})
 							}
-
-
-							cloneSprite(me.x, me.y, "Explosion", "Explosions", {
-								"size": explosionWidth
-							})
 						}
+
 
 						me.x = me.x + me.vars.xVel
 						me.vars.xVel = me.vars.xVel * 0.8
@@ -1683,12 +2508,18 @@ Assets = {
 							}
 						}
 						if (me.x < Game.world.camera.x - me.width) {
+							if (me.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
+								me.vars.healthbar.vars.destroyed = true
+							}
 							deleteClone()
 							return
 						}
 						if (me.vars.hp <= 0) {
 							playSound("Boom")
 							var script = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["deathScript"]
+							if (me.vars.healthbar != null) {
+								me.vars.healthbar.vars.destroyed = true
+							}
 							if (! (script === null || script === undefined)) {
 								script()
 							}
@@ -1710,6 +2541,63 @@ Assets = {
 			}
 		},
 		// Enemy spaceships
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.visible = false
+
+							me.scale.setTo(10)
+							me.anchor.setTo(0.5)
+
+							me.x = Game.width / 2
+							me.y = Game.height / 2
+
+							me.fixedToCamera = true
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+							if (vars.game.scroll >= vars.game.planets[vars.game.currentPlanet].boss.distance) {
+								if (vars.game.boss.warningTick < 400) {
+									if ((vars.game.boss.warningTick % 30) > 15) {
+										if (me.visible) { // No point in showing me if I'm already showing
+											me.visible = false
+										}
+									}
+									else {
+										if (! me.visible) { // No point in showing me if I'm already showing
+											me.visible = true
+										}
+									}
+								}
+								else {
+									if (me.visible) { // No point in hiding me if I'm already hidden
+										me.visible = false // Hide me when I'm not needed
+									}
+								}
+							}
+							else {
+								if (me.visible) { // No point in hiding me if I'm already hidden
+									me.visible = false // Hide me when I'm not needed
+								}
+							}
+							me.bringToTop()
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Warn",
+			"x": 0,
+			"y": 0,
+			"cos": "Warn"
+		},
+		// Warning
 		{
 			"scripts": {
 				"init": [
@@ -1791,102 +2679,19 @@ Assets = {
 					}
 				]
 			}
-		},
-		// Money Splash
-		{
-			"scripts": {
-				"init": [
-					{
-						"code": function() {
-							me.vars.flashCooldown = -1
-
-							setHealth = function(health, disableFlash) {
-								vars.game.health = health
-
-								var execute = Sprites["HealthBar"]
-
-								execute.ctx.clearRect(0, 0, execute.width, execute.height)
-								execute.ctx.lineCap = "round"
-
-								execute.ctx.lineWidth = 10
-								if (health == vars.game.save.upgrades.maxHealth && (! disableFlash)) {
-									execute.ctx.strokeStyle = "White"
-
-									playSound("Health_Restored")
-									execute.vars.flashCooldown = 35
-								}
-								else {
-									execute.ctx.strokeStyle = "#B9B9B9"
-								}
-								execute.ctx.beginPath()
-								execute.ctx.moveTo(10, execute.height / 2)
-								execute.ctx.lineTo(execute.width - 10, execute.height / 2)
-								execute.ctx.stroke()
-
-								if (((vars.game.health / vars.game.save.upgrades.maxHealth) * 700) - 10 > 5) {
-									execute.ctx.lineWidth = 5
-									execute.ctx.strokeStyle = "red"
-									execute.ctx.beginPath()
-									execute.ctx.moveTo(10, execute.height / 2)
-									execute.ctx.lineTo(((vars.game.health / vars.game.save.upgrades.maxHealth) * 700) - 10, execute.height / 2)
-									execute.ctx.stroke()
-								}
-
-							}
-							setHealth(vars.game.health, true)
-
-						},
-						"stateToRun": ["game"]
-					}
-				],
-				"main": [
-					{
-						"code": function() {
-							me.dirty = true
-
-							if (me.vars.flashCooldown == 0) {
-								me.vars.flashCooldown = -1
-
-								setHealth(vars.game.health, true)
-							}
-							else {
-								me.vars.flashCooldown--
-							}
-						},
-						"stateToRun": ["game"]
-					}
-				]
-			},
-			"id": "HealthBar",
-			"type": "canvas",
-			"width": 700,
-			"height": 10
-		},
-		// Health bar
-		{
-			"scripts": {
-				"init": [
-					{
-						"code": null,
-						"stateToRun": ["game"]
-					}
-				],
-				"main": []
-			},
-			"id": "HealthBar_Frame",
-			"x": 100,
-			"y": 0,
-			"type": "canvasFrame",
-			"bitmapID": "HealthBar",
-			"fixedToCamera": true
 		}
-		// Health bar sprite
+		// Money Splash
 	],
 	"scripts": {
 		"init": [
 			{
 				"code": function() {
-					playSound("Menu_Music", true)
+					if (vars.menu.switchedMenus) {
+						vars.menu.switchedMenus = false
+					}
+					else {
+						playSound("Menu_Music", true)
+					}
 
 					Game.world.setBounds(0, 0, Game.width * vars.menu.backgroundSize, Game.height * vars.menu.backgroundSize)
 				},
@@ -1895,7 +2700,12 @@ Assets = {
 
 			{
 				"code": function() {
-					playSound("Menu_Music", true)
+					if (vars.menu.switchedMenus) {
+						vars.menu.switchedMenus = false
+					}
+					else {
+						playSound("Menu_Music", true)
+					}
 
 					Game.world.setBounds(0, 0, Game.width, Game.height)
 					Game.camera.x = 0
@@ -1910,6 +2720,21 @@ Assets = {
 					vars.game.scroll = 0
 					vars.game.zoom = 5
 					vars.game.zoomAnimation = 1
+
+					stopSound("Game_Music")
+					stopSound("Boss1")
+					stopSound("Boss2")
+					stopSound("Boss3")
+					stopSound("Boss4")
+					stopSound("Boss5")
+
+					Loaded.snds.Game_Music.volume = 1
+					Loaded.snds.Boss1.volume = 1
+					Loaded.snds.Boss2.volume = 1
+					Loaded.snds.Boss3.volume = 1
+					Loaded.snds.Boss4.volume = 1
+					Loaded.snds.Boss5.volume = 1
+
 					playSound("Game_Music", false, "start", function() {
 						playSound("Game_Music", true, "repeat")
 					})
@@ -1987,5 +2812,24 @@ Assets = {
 	},
 	"mainScript": function() {
 		Sprites["FPS_Text"].setText("FPS: " + currentFPS)
+
+		if (vars.game.startedPlaying) {
+			vars.game.saveDelay = vars.game.saveDelay - (1 / 60)
+			if (vars.game.saveDelay <= 0) {
+				vars.game.saveNow(vars.game.muteSaveSound)
+				vars.game.muteSaveSound = false
+				vars.game.saveDelay = vars.game.config.autoSaveTime
+			}
+		}
+
+		if (Sprites.Game_Saved_Message.visible) {
+			Sprites.Game_Saved_Message.alpha = Sprites.Game_Saved_Message.alpha - (2 / 100)
+			Sprites.Game_Saved_Message.bringToTop()
+
+			if (Sprites.Game_Saved_Message.alpha <= 0) {
+				Sprites.Game_Saved_Message.alpha = 1
+				Sprites.Game_Saved_Message.visible = false
+			}
+		}
 	}
 }

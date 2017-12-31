@@ -59,6 +59,38 @@ function post(url, data, code) {
 	http.send(params)
 }
 
+// W3schools cookie thing. (https://www.w3schools.com/js/js_cookies.asp)
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function deleteCookie(cname) {
+	var d = new Date();
+    d.setTime(d.getTime() - (100*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+	document.cookie = cname + "=" + "" + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+
 function get(url, func) {
 	// From https://stackoverflow.com/questions/9713058/send-post-data-using-xmlhttprequest and https://stackoverflow.com/questions/18962799/javascript-http-post-with-json-data
     http = new XMLHttpRequest()
@@ -215,6 +247,7 @@ function testRenderers() {
 	console.log("JAMESCRIPT: Running speedtest...")
 	Game = new Phaser.Game(width, height, Phaser.AUTO, "game", null, false, false)
 	testTick = 0
+	speedtestSprites = []
 	Game.state.add("Test", {
 		"preload": function() {
 			var er = false
@@ -229,15 +262,12 @@ function testRenderers() {
 			if (er) {
 				throw new Error(fadeDotError)
 			}
-
-			Game.load.image("test", "assets/imgs/" + Assets["imgs"][0]["src"])
 		},
 		"create": function() {
 			var i = 0
-			while (i < 300) {
-				var sprite = Game.add.sprite(Game.rnd.integerInRange(0, Game.width), Game.rnd.integerInRange(0, Game.height), "test")
-				sprite.width = Game.width
-				sprite.height = Game.height
+			while (i < 10) {
+				var sprite = Game.add.text(Game.rnd.integerInRange(0, Game.width), Game.rnd.integerInRange(0, Game.height), "test", {})
+				speedtestSprites[speedtestSprites.length] = sprite
 				i++
 			}
 			avgFPS = {}
@@ -246,7 +276,13 @@ function testRenderers() {
 			avgFPS.value = 0
 		},
 		"update": function() {
-			if (testTick == 120) {
+			var i = 0
+			for (i in speedtestSprites) {
+				var sprite = speedtestSprites[i]
+				sprite.x = Game.rnd.integerInRange(0, Game.width)
+				sprite.y = Game.rnd.integerInRange(0, Game.height)
+			}
+			if (testTick == 30) {
 				console.log("JAMESCRIPT: AUTO achieved " + avgFPS.value + " FPS.")
 				if (useCanvas) {
 					console.log("JAMESCRIPT: 'useCanvas' is true. Switching to canvas mode...")
@@ -940,6 +976,7 @@ function create() {
 	for (i in Assets["sprites"]) {
 		var i = JSON.parse(i)
 		var c = Assets["sprites"][i]
+
 		SpritesIndex[c["id"]] = i
 		myJSON = c
 

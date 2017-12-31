@@ -176,7 +176,54 @@ vars.menu.menus.JSON.upgrades = [
                 }
             },
             {
+                "type": "image",
+                "selected": 0,
+                "imgs": [
+                    "Completed_Planet",
+                    "Locked_Planet"
+                ],
+                "x": 400,
+                "y": 220,
+                "initfunc": function() {
+                    me.scale.setTo(10)
+                    me.vars.textureWas = null
+                    me.vars.visibleWas = null
+                },
+                "mainfunc": function() {
+                    var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+
+                    var texture = null
+                    var visible = null
+
+                    if (vars.game.save.progress.completed > plannetSprite.selected) { // Completed
+                        me.vars.JSON.selected = 0
+                        var texture = me.vars.JSON.imgs[me.vars.JSON.selected]
+                        var visible = true
+                    }
+                    else {
+                        if (vars.game.save.progress.completed < plannetSprite.selected) { // Locked
+                            me.vars.JSON.selected = 1
+                            var texture = me.vars.JSON.imgs[me.vars.JSON.selected]
+                            var visible = true
+                        }
+                        else { // Unlocked, but not completed
+                            var visible = false
+                        }
+                    }
+
+                    if (texture != me.vars.textureWas) { // So it doesn't constantly call it
+                        me.loadTexture(texture)
+                        me.vars.textureWas = texture
+                    }
+                    if (visible != me.vars.visibleWas) {
+                        me.visible = visible
+                        me.vars.visibleWas = visible
+                    }
+                }
+            },
+            {
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Arrow_Left"
@@ -209,6 +256,7 @@ vars.menu.menus.JSON.upgrades = [
             },
             {
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Arrow_Right"
@@ -241,6 +289,7 @@ vars.menu.menus.JSON.upgrades = [
             },
             {
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Warp_Button"
@@ -288,6 +337,7 @@ vars.menu.menus.JSON.upgrades = [
                     }
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Attack_0"
@@ -315,6 +365,7 @@ vars.menu.menus.JSON.upgrades = [
                     }
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Attack_1"
@@ -342,6 +393,7 @@ vars.menu.menus.JSON.upgrades = [
                     }
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Attack_2"
@@ -367,6 +419,7 @@ vars.menu.menus.JSON.upgrades = [
                     "upgradeType": "upgradeSelect"
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Attack_3"
@@ -389,6 +442,7 @@ vars.menu.menus.JSON.upgrades = [
                     "upgradeType": "upgradeSelect"
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Attack_4"
@@ -411,6 +465,7 @@ vars.menu.menus.JSON.upgrades = [
                     "upgradeType": "upgradeSelect"
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Attack_5"
@@ -439,10 +494,11 @@ vars.menu.menus.JSON.upgrades = [
                     "maxUpgrade": 10,
                     "upgradeAmount": 5,
                     "calculatePrice": function(upgraded) {
-                        return Math.round(me.vars.JSON.data.startPrice * Math.pow(1.3, upgraded))
+                        return Math.round(me.vars.JSON.data.startPrice * Math.pow(1.2, upgraded))
                     }
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Defence_0"
@@ -466,10 +522,11 @@ vars.menu.menus.JSON.upgrades = [
                     "maxUpgrade": 20,
                     "upgradeAmount": -0.5,
                     "calculatePrice": function(upgraded) {
-                        return Math.round(me.vars.JSON.data.startPrice * Math.pow(1.3, upgraded))
+                        return Math.round(me.vars.JSON.data.startPrice * Math.pow(1.2, upgraded))
                     }
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Defence_1"
@@ -493,10 +550,11 @@ vars.menu.menus.JSON.upgrades = [
                     "maxUpgrade": 20,
                     "upgradeAmount": 0.0005,
                     "calculatePrice": function(upgraded) {
-                        return Math.round(me.vars.JSON.data.startPrice * Math.pow(1.4, upgraded))
+                        return Math.round(me.vars.JSON.data.startPrice * Math.pow(1.3, upgraded))
                     }
                 },
                 "type": "button",
+                "active": true,
                 "selected": 0,
                 "imgs": [
                     "Upgrade_Defence_2"
@@ -512,8 +570,8 @@ vars.menu.menus.JSON.upgrades = [
             }
             // Health regen
         ]
-    },
-    {
-        "text": "Settings"
     }
+    //{
+    //    "text": "Settings"
+    //} // I will add this in soon
 ]
