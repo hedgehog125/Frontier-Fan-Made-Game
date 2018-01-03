@@ -9,7 +9,7 @@ The original game is here: https://scratch.mit.edu/projects/58976080
 == Programming ==
 
 I used phaser (https://phaser.io) to create the game but phaser wouldn't be possible without pixi.js (http://www.pixijs.com/)
-I used JAMESCRIPT to make it even easier to create my game which I created (https://github.com/hedgehog125/JAMESCRIPT) but to make 
+I used JAMESCRIPT to make it even easier to create my game which I created (https://github.com/hedgehog125/JAMESCRIPT) but to make
 it I had quite a few bits and pieces of help from stackoverflow questions. (I wrote comments in my code where I got help)
 The game JSON is all mine.
 
@@ -17,3 +17,7 @@ The game JSON is all mine.
 
 I painted all of the graphics myself using GIMP (https://www.gimp.org/).
 Although, I had to look at other images to help me with mine (but who doesn't?)
+
+== Other ==
+
+I got the planet names from this generator: http://www.fantasynamegenerators.com/planet_names.php#.WktRphOFjMU

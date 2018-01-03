@@ -915,7 +915,7 @@ Assets = {
 			},
 			"id": "By_Text",
 			"x": 800,
-			"y": 450,
+			"y": 450	,
 			"text": "hedgehog125",
 			"settings": {
 				"font": "8pt Helvetica",

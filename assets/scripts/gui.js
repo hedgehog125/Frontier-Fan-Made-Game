@@ -65,14 +65,14 @@ vars.menu.menus.scripts.hover.upgradeSelect = function() {
             var ret = "You have " + vars.game.save.money.toLocaleString() + " Intergalactic Pounds | Selected"
         }
         else {
-            var ret = "You have " + vars.game.save.money + " Intergalactic Pounds | Unlocked, but not selected"
+            var ret = "You have " + vars.game.save.money.toLocaleString() + " Intergalactic Pounds | Unlocked, but not selected"
         }
     }
     else {
         var displayPrice = me.vars.JSON.data.price.toLocaleString()
 
         var ret = "You have " + vars.game.save.money.toLocaleString() + " Intergalactic Pounds | "
-        var ret = ret + " Price: " + displayPrice.toLocaleString() + " Intergalactic Pounds to unlock"
+        var ret = ret + " Price: " + displayPrice + " Intergalactic Pounds to unlock"
     }
 
     var ret = me.vars.JSON.data.englishName + " \n" + ret
