@@ -5,7 +5,7 @@
 // Add more planets. <==
 // Create the minigame for the bosses.
 // Different spaceships.
-// Settings menu. (not that important, but has to be done)
+// Settings menu. (not that important, but probably should be done soon)
 
 
 
