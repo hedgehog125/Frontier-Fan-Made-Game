@@ -158,6 +158,12 @@ vars.menu.menus.JSON.upgrades = [
                 "imgs": [],
                 "x": 400,
                 "y": 220,
+                "hoverMessage": function() {
+                    if (vars.game.save.progress.completed < me.vars.JSON.selected) {
+                        return "??? Unlock the previous planet first."
+                    }
+                    return vars.game.planets[me.vars.JSON.selected].name
+                },
                 "prefunc": function() {
                     var planetImages = []
                     var i = 0
@@ -184,6 +190,14 @@ vars.menu.menus.JSON.upgrades = [
                 ],
                 "x": 400,
                 "y": 220,
+                "hoverMessage": function() {
+                    var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+
+                    if (vars.game.save.progress.completed < plannetSprite.selected) {
+                        return "??? Unlock the previous planet first."
+                    }
+                    return vars.game.planets[plannetSprite.selected].name
+                },
                 "initfunc": function() {
                     me.scale.setTo(10)
                     me.vars.textureWas = null

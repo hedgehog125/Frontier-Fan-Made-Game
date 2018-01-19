@@ -2,8 +2,16 @@
 
 // For later releases...
 
-// Add more planets. <==
-// Create the minigame for the bosses.
+
+// Fix bugs described by TODO tags.
+// Prevent you from playing locked planets! <===
+// Stop enemies from getting hurt by crashing when 'invunerableToCrashes' tag is used.
+// Check planet 2 difficulty.
+// Update JAMESCRIPT to use phaser's collide and overlap functions more intelligently, it will massively speed things up!
+// Add statistics and achivements. (Don't forget backwards compatibility!)
+
+// Add more planets. <== (don't forget to draw and add the poppy thing!!)
+// Create the minigame for the bosses. - Should I?
 // Different spaceships.
 // Settings menu. (not that important, but probably should be done soon)
 
@@ -65,6 +73,8 @@ Assets = {
 			"src": "warning.png"
 		},
 		// Enemies.
+
+		// Planet 1
 		{
 			"id": "Enemy_Rocket_1",
 			"src": "enemy_rocket_1.png"
@@ -85,9 +95,100 @@ Assets = {
 			"id": "Enemy_Bullet_Hit",
 			"src": "enemy_bullet.png" // No hit image.
 		},
+		// Planet 2
 		{
 			"id": "Enemy_Rocket_2_Hit",
 			"src": "enemy_rocket_2_hit.png"
+		},
+		{
+			"id": "Enemy_Rocket_3",
+			"src": "enemy_rocket_3.png"
+		},
+		{
+			"id": "Enemy_Rocket_3_Hit",
+			"src": "enemy_rocket_3_hit.png"
+		},
+		{
+			"id": "Enemy_Rocket_4",
+			"src": "enemy_rocket_4.png"
+		},
+		{
+			"id": "Enemy_Rocket_4_Hit",
+			"src": "enemy_rocket_4_hit.png"
+		},
+
+		{
+			"id": "Enemy_Rocket_5_0",
+			"src": "enemy_rocket_5_0.png"
+		},
+		{
+			"id": "Enemy_Rocket_5_Hit",
+			"src": "enemy_rocket_5_hit.png"
+		},
+		{
+			"id": "Enemy_Rocket_5_1",
+			"src": "enemy_rocket_5_1.png"
+		},
+		{
+			"id": "Enemy_Rocket_5_2",
+			"src": "enemy_rocket_5_2.png"
+		},
+
+		{
+			"id": "Enemy_Rocket_6",
+			"src": "enemy_rocket_6.png"
+		},
+		{
+			"id": "Enemy_Rocket_6_Hit",
+			"src": "enemy_rocket_6_hit.png"
+		},
+		{
+			"id": "Enemy_Rocket_7",
+			"src": "enemy_rocket_7.png"
+		},
+		{
+			"id": "Enemy_Rocket_7_Hit",
+			"src": "enemy_rocket_7_hit.png"
+		},
+		{
+			"id": "Enemy_Rocket_7_Hidden",
+			"src": "enemy_rocket_7.png"
+		},
+		{
+			"id": "Enemy_Rocket_7_Hidden_Hit",
+			"src": "enemy_rocket_7_hit.png"
+		},
+		{
+			"id": "Enemy_Rocket_8",
+			"src": "enemy_rocket_8.png"
+		},
+		{
+			"id": "Enemy_Rocket_8_Hit",
+			"src": "enemy_rocket_8.png" // No hit image
+		},
+		{
+			"id": "Enemy_Rocket_9",
+			"src": "enemy_rocket_9.png"
+		},
+		{
+			"id": "Enemy_Rocket_9_Hit",
+			"src": "enemy_rocket_9.png" // No hit image
+		},
+		{
+			"id": "Enemy_Rocket_10",
+			"src": "enemy_rocket_10.png"
+		},
+		{
+			"id": "Enemy_Rocket_10_Hit",
+			"src": "enemy_rocket_10.png" // No hit image
+		},
+		{
+			"id": "Enemy_Rocket_11",
+			"src": "enemy_rocket_11.png"
+		},
+		{
+			"id": "Enemy_Rocket_11_Hit",
+			"src": "enemy_rocket_11.png" // No hit image
 		},
 		// Bosses
 		// Boss 1
@@ -248,6 +349,10 @@ Assets = {
 		{
 			"id": "Planet_1",
 			"src": "planet_1.png"
+		},
+		{
+			"id": "Planet_2",
+			"src": "planet_2.png"
 		}
 	],
 	"snds" : [
@@ -1256,6 +1361,32 @@ Assets = {
 								me.vars.clicked = false
 							})
 						}
+						else {
+							me.vars.hovering = false
+							me.vars.clicked = false
+							me.vars.click = 0
+
+							me.inputEnabled = true
+
+							me.events.onInputOver.add(function(sprite) {
+								me = sprite
+
+								me.vars.hovering = true
+								me.vars.clicked = true
+							})
+							me.events.onInputOut.add(function(sprite) {
+								me = sprite
+
+								me.vars.hovering = false
+							})
+							me.events.onInputDown.add(function(sprite) {
+								me = sprite
+								me.vars.hovering = true
+							})
+							me.events.onInputUp.add(function(sprite) {
+								me.vars.clicked = false
+							})
+						}
 
 						me.vars.JSON.initfunc()
 					}
@@ -1269,10 +1400,19 @@ Assets = {
 							me.loadTexture(me.vars.JSON.imgs[me.vars.JSON.selected])
 						}
 
-
+						if (me.vars.hovering) {
+							if (me.vars.JSON.hoverMessage != undefined) {
+								if (typeof me.vars.JSON.hoverMessage == "function") {
+									vars.menu.hoverMessage = me.vars.JSON.hoverMessage()
+								}
+								else {
+									vars.menu.hoverMessage = me.vars.JSON.hoverMessage
+								}
+							}
+						}
 						if (me.vars.JSON.type == "button") {
 							if (me.vars.click == 1) {
-								if ((! me.vars.hovering) || ((! me.vars.clicked) && touchscreen)) {  // Problem here. <============
+								if ((! me.vars.hovering) || ((! me.vars.clicked) && touchscreen)) {
 									if (! touchscreen) {
 										me.vars.hovering = false
 									}
@@ -1288,16 +1428,6 @@ Assets = {
 							}
 							else {
 								me.vars.clicked = false
-							}
-							if (me.vars.hovering) {
-								if (me.vars.JSON.hoverMessage != undefined) {
-									if (typeof me.vars.JSON.hoverMessage == "function") {
-										vars.menu.hoverMessage = me.vars.JSON.hoverMessage()
-									}
-									else {
-										vars.menu.hoverMessage = me.vars.JSON.hoverMessage
-									}
-								}
 							}
 						}
 
@@ -1600,6 +1730,8 @@ Assets = {
 							me.height = Game.world.height
 							me.x = Game.width + (me.width / 2) + 50
 							me.y = Game.world.centerY
+
+							me.vars.speed = 0.5
 						},
 						"stateToRun": ["game"]
 					}
@@ -1607,7 +1739,16 @@ Assets = {
 				"main": [
 					{
 						"code": function() {
-							vars.game.scroll = vars.game.scroll + 0.5
+							if (vars.game.scroll >= vars.game.planets[vars.game.currentPlanet].boss.distance) {
+								if (! vars.game.planets[vars.game.currentPlanet].boss.scroll) {
+									me.vars.speed = me.vars.speed * 0.99
+									if (me.vars.speed <= 0.005) {
+										me.vars.speed = 0
+									}
+								}
+							}
+							vars.game.scroll = vars.game.scroll + me.vars.speed
+
 							Game.world.camera.x = vars.game.scroll
 							Game.world.setBounds(0, 0, Game.width + vars.game.scroll, Game.height)
 							if (me.x + (me.width / 2) < Game.world.camera.x) {
@@ -1697,12 +1838,27 @@ Assets = {
 										var enemySprite = Sprites[touchInfo]
 
 										if (enemySprite.vars.hitFlash == 0) {
-											enemySprite.loadTexture(enemy["cos"] + "_Hit")
+											if (enemy.hitCos != null) {
+												if (typeof enemy.hitCos == "function") {
+													enemySprite.loadTexture(enemy.hitCos())
+												}
+												else {
+													enemySprite.loadTexture(enemy.hitCos)
+												}
+											}
+											else {
+												enemySprite.loadTexture(enemy["cos"] + "_Hit")
+											}
 											enemySprite.vars.hitFlash = 10
 											enemySprite.vars.hp = enemySprite.vars.hp - 1
 											vars.game.save.money = vars.game.save.money + 1
 											me.vars.moneySplash(1)
 
+
+											if (enemySprite.vars.JSON.hurtBoss) { // Hurt the boss
+												vars.game.boss.health = vars.game.boss.health - 1
+											}
+											// TODO: Take into account crash invunerablility tags
 											if (enemySprite.vars.hp > 0) {
 												if (enemySprite.vars.healthbar != null) { // Set the healthbar's health
 													enemySprite.vars.healthbar.vars.setHealth(enemySprite.vars.hp, enemySprite.vars.JSON.health, enemySprite.vars.healthbar)
@@ -1855,7 +2011,7 @@ Assets = {
 						"code": function() {
 							me.visible = false
 
-							// A database for the homing bullets to comunicate.
+							// A database for the homing `bullets` to comunicate.
 
 							me.vars.tactics = {}
 							me.vars.tactics.targets = {}
@@ -2022,7 +2178,7 @@ Assets = {
 								if (spriteCloneIds.Enemy_Rockets[i] != undefined) {
 									var c = Sprites[spriteCloneIds.Enemy_Rockets[i]]
 									var dis = Math.abs(c.x - me.x) + Math.abs(c.y - me.y)
-									if (! c.vars.JSON.invunerable) { // Don't home to them if they're invunerable!
+									if (! (c.vars.JSON.invunerable || c.vars.JSON.preventShooting)) { // Don't home to them if they're invunerable!
 										if (dis <= vars.game.save.upgrades.homing) {
 											if (dis < closestDis) {
 												var tooClose = dis <= Math.max(Sprites.Rocket.width, Sprites.Rocket.height) * 3
@@ -2218,7 +2374,12 @@ Assets = {
 							me.scale.setTo(me.vars.JSON.size)
 						}
 
-						me.anchor.setTo(0, 0.5)
+						if (me.vars.JSON.anchor != undefined) {
+							me.anchor.setTo(me.vars.JSON.anchor.x, me.vars.JSON.anchor.y)
+						}
+						else {
+							me.anchor.setTo(0, 0.5)
+						}
 
 						if (! me.vars.JSON.disableOffscreenPrevention) {
 							if (me.y < Game.world.centerY) { // Check I'm not too high or low.
@@ -2257,15 +2418,15 @@ Assets = {
 							})
 						}
 
-						if (! me.vars.JSON.invunerable) {
+						if ((! me.vars.JSON.invunerable) && (! me.vars.JSON.preventShooting)) {
 							if (touchingClones("Bullet")) {
 								if (me.vars.hitFlash == 0) {
 									if (! me.vars.JSON.disableBulletKnockback) {
 										if (getCentreX() > getCentreX(touchInfo)) { // Knock me back.
-											me.vars.xVel = me.vars.xVel + 2
+											me.vars.xVel = me.vars.xVel + 1
 										}
 										else {
-											me.vars.xVel = me.vars.xVel - 2
+											me.vars.xVel = me.vars.xVel - 1
 										}
 									}
 
@@ -2275,7 +2436,21 @@ Assets = {
 									var damage = vars.game.save.upgrades.fireDamage
 
 									me.vars.hp = me.vars.hp - vars.game.save.upgrades.fireDamage
-									me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
+
+									var enemy = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]
+
+									if (enemy.hitCos != null) {
+										if (typeof enemy.hitCos == "function") {
+											me.loadTexture(enemy.hitCos())
+										}
+										else {
+											me.loadTexture(enemy.hitCos)
+										}
+									}
+									else {
+										me.loadTexture(enemy["cos"] + "_Hit")
+									}
+
 									me.vars.hitFlash = 10
 									if (me.vars.hp > 0) {
 										playSound("Hit")
@@ -2303,8 +2478,12 @@ Assets = {
 										}
 									}
 									else {
-										vars.game.save.money = vars.game.save.money + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)) // Money
-										me.vars.moneySplash(vars.game.save.upgrades.fireDamage - (0 - me.vars.hp))
+										var bounus = 0
+										if (me.vars.JSON.defeatBonus != null) {
+											var bounus = me.vars.JSON.defeatBonus
+										}
+										vars.game.save.money = vars.game.save.money + bounus + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)) // Money
+										me.vars.moneySplash(bounus + (vars.game.save.upgrades.fireDamage - (0 - me.vars.hp)))
 										if (me.vars.JSON.hurtBoss) {
 											vars.game.boss.health = vars.game.boss.health - healthWas
 										}
@@ -2320,8 +2499,10 @@ Assets = {
 							}
 						}
 						else {
-							if (touchingClones("Bullet")) {
-								deleteCloneByName(touchInfo) // Just delete the bullet without hurting me.
+							if (me.vars.JSON.invunerable) {
+								if (touchingClones("Bullet")) {
+									deleteCloneByName(touchInfo) // Just delete the bullet without hurting me.
+								}
 							}
 						}
 						// So enemy bullets don't blow up the spaceship they were fired from!
@@ -2356,7 +2537,7 @@ Assets = {
 						}
 						if ((! me.vars.JSON.disableHitTest) && me.vars.escaped && me.vars.hitFlash == 0 && (! me.vars.moveBack)) {
 							var criteria = function(hit) {
-								return hit.vars.escaped && hit.vars.hitFlash == 0 && (! hit.vars.JSON.disableHitTest)
+								return hit.vars.escaped && hit.vars.hitFlash == 0 && (! hit.vars.JSON.disableHitTest) && (! (me.vars.JSON.invunerableToCrashes && hit.vars.JSON.invunerableToCrashes))
 							}
 							if (touchingClones("Enemy_Rockets", criteria)) {
 								var planetEnemies = vars.game.planets[vars.game.currentPlanet]["enemies"]
@@ -2369,9 +2550,13 @@ Assets = {
 
 								var gainMoney = 0
 
-								if (! me.vars.JSON.invunerable) {
+								if ((! me.vars.JSON.invunerable) || (! me.vars.JSON.invunerableToCrashes)) {
 									if (me.vars.hp - damage < 0) {
-										var gainMoney = gainMoney + (me.vars.hp * bonusDamage)
+										var bounus = 0
+										if (me.vars.JSON.defeatBonus != null) {
+											var bounus = me.vars.JSON.defeatBonus
+										}
+										var gainMoney = gainMoney + bounus + (me.vars.hp * bonusDamage)
 										me.vars.hp = me.vars.hp - damage // Damage me
 										if (me.vars.JSON.hurtBoss) {
 											vars.game.boss.health = vars.game.boss.health - me.vars.hp
@@ -2410,9 +2595,13 @@ Assets = {
 
 								var damage = planetEnemies[me.vars.type].damage * bonusDamage
 
-								if (! hitRocket.vars.JSON.invunerable) {
+								if ((! hitRocket.vars.JSON.invunerable) || (! hitRocket.vars.JSON.invunerableToCrashes)) {
 									if (hitRocket.vars.hp - damage < 0) {
-										var gainMoney = gainMoney + (hitRocket.vars.hp * bonusDamage)
+										var bounus = 0
+										if (hitRocket.vars.JSON.defeatBonus != null) {
+											var bounus = hitRocket.vars.JSON.defeatBonus
+										}
+										var gainMoney = gainMoney + bounus + (hitRocket.vars.hp * bonusDamage)
 										hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me
 										if (hitRocket.vars.JSON.hurtBoss) {
 											vars.game.boss.health = vars.game.boss.health - hitRocket.vars.hp
@@ -2453,53 +2642,82 @@ Assets = {
 
 								if (getCentreX() > getCentreX(touchInfo)) { // Propel us away from each other.
 									if (! me.vars.JSON.disableSpaceshipKnockback) {
-										me.vars.xVel = me.vars.xVel + 5
+										me.vars.xVel = me.vars.xVel + 2.5
 									}
 									if (! hitRocket.vars.JSON.disableSpaceshipKnockback) {
-										hitRocket.vars.xVel = hitRocket.vars.xVel - 5
+										hitRocket.vars.xVel = hitRocket.vars.xVel - 2.5
 									}
 								}
 								else {
 									if (! me.vars.JSON.disableSpaceshipKnockback) {
-										me.vars.xVel = me.vars.xVel - 5
+										me.vars.xVel = me.vars.xVel - 2.5
 									}
 									if (! hitRocket.vars.JSON.disableSpaceshipKnockback) {
-										hitRocket.vars.xVel = hitRocket.vars.xVel + 5
+										hitRocket.vars.xVel = hitRocket.vars.xVel + 2.5
 									}
 								}
 
-								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"] + "_Hit")
-								hitRocket.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][hitRocket.vars.type]["cos"] + "_Hit")
-								me.vars.hitFlash = 10
-								hitRocket.vars.hitFlash = 10
+								var enemy = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]
 
-								if (me.width + me.height > hitRocket.width + hitRocket.height) {
-									if (me.width > me.height) {
-										var explosionWidth = me.width
+								if (enemy.hitCos != null) {
+									if (typeof enemy.hitCos == "function") {
+										me.loadTexture(enemy.hitCos())
 									}
 									else {
-										var explosionWidth = me.height
+										me.loadTexture(enemy.hitCos)
 									}
 								}
 								else {
-									if (hitRocket.width > hitRocket.height) {
-										var explosionWidth = hitRocket.width
+									me.loadTexture(enemy["cos"] + "_Hit")
+								}
+
+								var enemy = vars.game.planets[vars.game.currentPlanet]["enemies"][hitRocket.vars.type]
+
+								if (enemy.hitCos != null) {
+									if (typeof enemy.hitCos == "function") {
+										hitRocket.loadTexture(enemy.hitCos())
 									}
 									else {
-										var explosionWidth = hitRocket.height
+										hitRocket.loadTexture(enemy.hitCos)
 									}
+								}
+								else {
+									hitRocket.loadTexture(enemy["cos"] + "_Hit")
+								}
+
+								me.vars.hitFlash = 10
+								hitRocket.vars.hitFlash = 10
+
+								if (me.vars.JSON.invunerableToCrashes) {
+									var mySize = 0 // So the explosion isn't massive when it doesn't make sense.
+								}
+								else {
+									var mySize = Math.max(me.width, me.height)
+								}
+								if (hitRocket.vars.JSON.invunerableToCrashes) {
+									var hitRocketSize = 0 // So the explosion isn't massive when it doesn't make sense.
+								}
+								else {
+									var hitRocketSize = Math.max(hitRocket.width, hitRocket.height)
+								}
+
+								if (mySize > hitRocketSize) {
+									var explosionSize = mySize
+								}
+								else {
+									var explosionSize = hitRocketSize
 								}
 
 
 								cloneSprite(me.x, me.y, "Explosion", "Explosions", {
-									"size": explosionWidth
+									"size": explosionSize
 								})
 							}
 						}
 
 
 						me.x = me.x + me.vars.xVel
-						me.vars.xVel = me.vars.xVel * 0.8
+						me.vars.xVel = me.vars.xVel * 0.85
 
 						if (me.vars.hitFlash > 0) {
 							me.vars.hitFlash--
