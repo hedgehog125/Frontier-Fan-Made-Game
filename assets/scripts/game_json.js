@@ -3,6 +3,7 @@
 // For later releases...
 
 
+// Remove new planet from online version.
 // Fix bugs described by TODO tags.
 // Prevent you from playing locked planets! <===
 // Stop enemies from getting hurt by crashing when 'invunerableToCrashes' tag is used.
@@ -1854,30 +1855,30 @@ Assets = {
 											vars.game.save.money = vars.game.save.money + 1
 											me.vars.moneySplash(1)
 
-
-											if (enemySprite.vars.JSON.hurtBoss) { // Hurt the boss
-												vars.game.boss.health = vars.game.boss.health - 1
-											}
-											// TODO: Take into account crash invunerablility tags
-											if (enemySprite.vars.hp > 0) {
-												if (enemySprite.vars.healthbar != null) { // Set the healthbar's health
-													enemySprite.vars.healthbar.vars.setHealth(enemySprite.vars.hp, enemySprite.vars.JSON.health, enemySprite.vars.healthbar)
+											if (! enemySprite.vars.JSON.invunerable) {
+												if (enemySprite.vars.JSON.hurtBoss) { // Hurt the boss
+													vars.game.boss.health = vars.game.boss.health - 1
 												}
-												else {
-													functionForClone = [
-														function() {
-															return me
-														},
-														"before"
-													]
-													enemySprite.vars.healthbar = cloneSprite(null, null, null, "Enemy_HealthBars", {
-														"health": enemySprite.vars.hp,
-														"maxHealth": enemySprite.vars.JSON.health,
-														"parent": enemySprite
-													}, null, null, 100, 10)
+
+												if (enemySprite.vars.hp > 0) {
+													if (enemySprite.vars.healthbar != null) { // Set the healthbar's health
+														enemySprite.vars.healthbar.vars.setHealth(enemySprite.vars.hp, enemySprite.vars.JSON.health, enemySprite.vars.healthbar)
+													}
+													else {
+														functionForClone = [
+															function() {
+																return me
+															},
+															"before"
+														]
+														enemySprite.vars.healthbar = cloneSprite(null, null, null, "Enemy_HealthBars", {
+															"health": enemySprite.vars.hp,
+															"maxHealth": enemySprite.vars.JSON.health,
+															"parent": enemySprite
+														}, null, null, 100, 10)
+													}
 												}
 											}
-
 										}
 										setHealth(vars.game.health - damage)
 									}

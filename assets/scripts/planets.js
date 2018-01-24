@@ -95,7 +95,7 @@ vars.game.planetsEnemies.eggMissile = {
 		}
 		else {
 			if (me.x > Game.world.width || me.x < 0 || me.y < 0 || me.y > Game.height) {
-				deleteClone()
+				me.vars.hp = 0
 			}
 		}
 	}
@@ -258,6 +258,9 @@ vars.game.planetsEnemies.frogBoss = {
 							}
 						}
 					}
+					else {
+						me.vars.activeAttack = 4 // Fart
+					}
 
 
 					me.vars.attackData = {}
@@ -271,17 +274,36 @@ vars.game.planetsEnemies.frogBoss = {
 					}
 					else {
 						if (me.vars.activeAttack == 2) {
-							me.vars.attackDelay = Game.rnd.integerInRange(10, 100)
+							me.vars.attackDelay = Game.rnd.integerInRange(50, 100)
 							me.vars.attackData.frogs = Game.rnd.integerInRange(3, 6)
 						}
 						else {
 							if (me.vars.activeAttack == 3) {
 								playSound("Launch")
 
-								me.vars.attackDelay = Game.rnd.integerInRange(10, 100)
-								clone(me.x + 20, me.y, "Enemy_Rocket_10", 7, me)
+								me.vars.attackDelay = Game.rnd.integerInRange(100, 200)
+								functionForClone = [
+									function() {
+										me.vars.boss = dataForClone[1]
+										dataForClone = dataForClone[0]
+									},
+									"before"
+								]
+								clone(me.x + 40, me.y, "Enemy_Rocket_10", [
+									7,
+									me
+								])
 
 								me.vars.activeAttack = 0
+							}
+							else {
+								if (me.vars.activeAttack == 4) {
+									playSound("Launch")
+
+									me.vars.activeAttack = 0
+									me.vars.attackDelay = Game.rnd.integerInRange(50, 100)
+									clone(me.x + (me.width - 40), me.y, "Enemy_Rocket_11", 8)
+								}
 							}
 						}
 					}
@@ -349,6 +371,7 @@ vars.game.planetsEnemies.frogBoss = {
 }
 vars.game.planetsEnemies.froggyMinion = {
 	"initScript": function() {
+		me.scale.setTo(-1, 1)
 		me.angle = getAngleBetweenSprites(me, Sprites.Rocket)
 
 		me.vars.maxTurn = 50
@@ -405,32 +428,63 @@ vars.game.planetsEnemies.froggyMinion = {
 		}
 		else {
 			if (me.x > Game.world.width || me.x < 0 || me.y < 0 || me.y > Game.height) {
-				deleteClone()
+				me.vars.hp = 1
 			}
 		}
 	}
 }
 vars.game.planetsEnemies.froggyTongue = {
 	"initScript": function() {
-		me.vars.boss = dataForClone
 		me.vars.stretchVel = 0
 		me.vars.direction = 1
 		me.width = 1
 	},
 	"mainScript": function() {
-		me.x = me.vars.boss.x
+		if (me.vars.boss == null) {
+			me.vars.hp = 0
+			return
+		}
+		me.x = me.vars.boss.x + 40
 		me.y = me.vars.boss.y
 
-		me.vars.stretchVel = me.vars.stretchVel + me.vars.direction
-		//me.width = me.width + me.vars.stretchVel
-		me.width = me.width + 0.001
+		me.vars.stretchVel = me.vars.stretchVel + (me.vars.direction * 0.1)
+		me.width = me.width + me.vars.stretchVel
 
 		if (getLeftX() < vars.game.scroll) {
-			me.vars.direction = -1
+			if (me.vars.direction == 1) {
+				me.vars.direction = -1
+				me.vars.stretchVel = 0
+			}
 		}
 		if (me.width < 1) {
-			console.log("A")
-			deleteClone()
+			me.vars.hp = 0
+		}
+	}
+}
+vars.game.planetsEnemies.froggyFart = {
+	"initScript": function() {
+		me.alpha = 0
+		me.vars.fadeDir = 1
+
+		me.x = getCentreX()
+	},
+	"mainScript": function() {
+		me.alpha = me.alpha + (me.vars.fadeDir * 0.02)
+
+		me.width++
+		me.height++
+
+		me.x = me.x + 2
+		if (me.vars.fadeDir == 1) {
+			if (me.alpha >= 1) {
+				me.alpha = 1
+				me.vars.fadeDir = -1
+			}
+		}
+		if (me.vars.fadeDir == -1) {
+			if (me.vars.alpha <= 0) {
+				me.vars.hp = 0
+			}
 		}
 	}
 }
@@ -548,6 +602,7 @@ vars.game.initEnemies = function() {
 			}
 		},
 		// Oytera
+		/*
 		{
 			"name": "Eden",
 			"enemies": [
@@ -615,6 +670,7 @@ vars.game.initEnemies = function() {
 				// Cute wall of death
 				{
 					"invunerableToCrashes": true,
+					"disableHitTest": true,
 					"disableSpaceshipKnockback": true,
 					"disableBulletKnockback": true,
 					"hurtBoss": true,
@@ -630,6 +686,7 @@ vars.game.initEnemies = function() {
 				{
 					"disableSpawnMove": true,
 					"invunerableToCrashes": true,
+					"disableHitTest": true,
 					"disableSpaceshipKnockback": true,
 					"chance": 0,
 					"health": 10,
@@ -645,13 +702,13 @@ vars.game.initEnemies = function() {
 				},
 				// Frog boss: minion
 				{
-					// TODO: Add drag tag
 					"disableSpawnMove": true,
 					"invunerableToCrashes": true,
+					"disableHitTest": true,
 					"disableSpaceshipKnockback": true,
 					"chance": 0,
-					"health": 10,
-					"damage": 5,
+					"health": 15,
+					"damage": 20,
 					"cos": "Enemy_Rocket_10",
 					"size": 3,
 					"anchor": {
@@ -660,8 +717,27 @@ vars.game.initEnemies = function() {
 					},
 					"initScript": enemies.froggyTongue.initScript,
 					"mainScript": enemies.froggyTongue.mainScript
-				}
+				},
 				// Frog boss: Tongue
+				{
+					"disableSpawnMove": true,
+					"preventShooting": true,
+					"invunerableToCrashes": true,
+					"disableHitTest": true,
+					"disableSpaceshipKnockback": true,
+					"chance": 0,
+					"health": 1,
+					"damage": 5,
+					"cos": "Enemy_Rocket_11",
+					"size": 3,
+					"anchor": {
+						"x": 0.5,
+						"y": 0.5
+					},
+					"initScript": enemies.froggyFart.initScript,
+					"mainScript": enemies.froggyFart.mainScript
+				}
+				// Frog boss: Fart
 			],
 			"firstWinReward": 20000,
 			"winReward": 10000,
@@ -680,6 +756,7 @@ vars.game.initEnemies = function() {
 				}
 			}
 		}
+		*/
 		// Eden
 	]
 }

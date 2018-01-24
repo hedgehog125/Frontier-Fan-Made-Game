@@ -311,12 +311,16 @@ vars.menu.menus.JSON.upgrades = [
                 "x": 400,
                 "y": 400,
                 "hoverMessage": "Warp to plannet",
+                "active": true,
                 "initfunc": function() {
                     me.scale.setTo(3)
 
                     me.vars.normalImg = me.key
                 },
-                "mainfunc": function() {},
+                "mainfunc": function() {
+                    var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+                    me.vars.JSON.active = vars.game.save.progress.completed >= plannetSprite.selected
+                },
                 "clickfunc": function() {
                     me.loadTexture(me.vars.normalImg + "_Hover")
 
