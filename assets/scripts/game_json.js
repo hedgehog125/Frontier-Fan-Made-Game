@@ -5,6 +5,7 @@
 
 // Remove new planet from online version.
 // Fix bugs described by TODO tags.
+// Change fadeDot error in JAMESCRIPT and update wiki 'getting started' page.
 // Prevent you from playing locked planets! <===
 // Stop enemies from getting hurt by crashing when 'invunerableToCrashes' tag is used.
 // Check planet 2 difficulty.
@@ -12,7 +13,6 @@
 // Add statistics and achivements. (Don't forget backwards compatibility!)
 
 // Add more planets. <== (don't forget to draw and add the poppy thing!!)
-// Create the minigame for the bosses. - Should I?
 // Different spaceships.
 // Settings menu. (not that important, but probably should be done soon)
 
@@ -442,6 +442,10 @@ Assets = {
 		{
 			"id": "Warn",
 			"src": "sfx/warn.mp3"
+		},
+		{
+			"id": "Suspense",
+			"src": "music/suspense.mp3"
 		}
 	],
 	"sprites": [

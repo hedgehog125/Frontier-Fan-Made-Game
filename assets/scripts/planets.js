@@ -226,6 +226,24 @@ vars.game.planetsEnemies.cuteWall = {
 		}
 	}
 }
+vars.game.planetsEnemies.darkSnake = {
+	"initScript": function() {
+		//me.alpha = 0.2 // Almost invisible.
+		me.scale.setTo(-2, 2)
+
+		playSound("Suspense")
+
+		me.vars.startX = me.x - vars.game.scroll
+		me.vars.startY = me.y
+
+		// TODO: What if the player dies and the sound is playing?
+	},
+	"mainScript": function() {
+		me.x = vars.game.scroll + (me.vars.startX + ((Sprites.Rocket.cameraOffset.x - me.vars.startX) / (Loaded.snds.Suspense.duration - (Loaded.snds.Suspense.currentTime / 1000))))
+		me.y = me.vars.startY + ((Sprites.Rocket.y - me.vars.startY) / (Loaded.snds.Suspense.duration - Loaded.snds.Suspense.currentTime))
+	}
+}
+
 vars.game.planetsEnemies.frogBoss = {
 	"initScript": function() {
 		me.vars.arriveAnimationDone = false
@@ -566,9 +584,6 @@ vars.game.initEnemies = function() {
 				"distance": 5000,
 				"scroll": true,
 				"health": 2000,
-				"minigame": {
-					"use": false
-				},
 				"initScript": function() {
 					vars.game.boss.scrollWas = 0
 
@@ -669,6 +684,19 @@ vars.game.initEnemies = function() {
 				},
 				// Cute wall of death
 				{
+					"disableHitTest": true,
+					"chance": 40,
+					"health": 40,
+					"damage": 30,
+					"cos": "Enemy_Rocket_7",
+					"hitCos": "Enemy_Rocket_7_Hit",
+					"size": 2,
+					"initScript": enemies.darkSnake.initScript,
+					"mainScript": enemies.darkSnake.mainScript
+				},
+				// Da dark snake
+
+				{
 					"invunerableToCrashes": true,
 					"disableHitTest": true,
 					"disableSpaceshipKnockback": true,
@@ -745,9 +773,6 @@ vars.game.initEnemies = function() {
 				"distance": 5000,
 				"scroll": false,
 				"health": 2000,
-				"minigame": {
-					"use": true
-				},
 				"initScript": function() {
 					clone(vars.game.scroll + width, 225, "Enemy_Rocket_6", 5)
 				},

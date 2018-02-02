@@ -5,6 +5,7 @@ The first part of the in-game music is from either Limitless or Elektronima, I'm
 The second part is from http://newgrounds.com and the menu music also is.
 The sound effects are made using https://www.bfxr.net/ by theChaotic (https://scratch.mit.edu/users/theChAOTiC/).
 The original game is here: https://scratch.mit.edu/projects/58976080
+The suspense sound created when "da dark snake" comes is from http://soundbible.com/902-Suspense.html 
 
 == Programming ==
 
@@ -20,4 +21,4 @@ Although, I had to look at other images to help me with mine (but who doesn't?)
 
 == Other ==
 
-I got the planet names from this generator: http://www.fantasynamegenerators.com/planet_names.php#.WktRphOFjMU
+I some of the planet names from this generator: http://www.fantasynamegenerators.com/planet_names.php#.WktRphOFjMU
