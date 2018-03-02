@@ -236,7 +236,7 @@ vars.game.planetsEnemies.darkSnake = {
 		me.vars.startX = me.x - vars.game.scroll
 		me.vars.startY = me.y
 
-		// TODO: What if the player dies and the sound is playing?
+		// TODO: What if the player dies and the sound is playing? And what if I die?
 	},
 	"mainScript": function() {
 		me.x = vars.game.scroll + (me.vars.startX + ((Sprites.Rocket.cameraOffset.x - me.vars.startX) / (Loaded.snds.Suspense.duration - (Loaded.snds.Suspense.currentTime / 1000))))
@@ -308,7 +308,7 @@ vars.game.planetsEnemies.frogBoss = {
 									"before"
 								]
 								clone(me.x + 40, me.y, "Enemy_Rocket_10", [
-									7,
+									8,
 									me
 								])
 
@@ -320,7 +320,7 @@ vars.game.planetsEnemies.frogBoss = {
 
 									me.vars.activeAttack = 0
 									me.vars.attackDelay = Game.rnd.integerInRange(50, 100)
-									clone(me.x + (me.width - 40), me.y, "Enemy_Rocket_11", 8)
+									clone(me.x + (me.width - 40), me.y, "Enemy_Rocket_11", 9)
 								}
 							}
 						}
@@ -367,7 +367,7 @@ vars.game.planetsEnemies.frogBoss = {
 						if (Game.rnd.integerInRange(0, 20) == 0) {
 							playSound("Launch")
 
-							clone(me.x, me.y, "Enemy_Rocket_3", 6)
+							clone(me.x, me.y, "Enemy_Rocket_3", 7)
 							me.vars.attackData.frogs--
 							if (me.vars.attackData.frogs < 1) { // All frogs have been released
 								me.vars.activeAttack = 0
@@ -774,15 +774,15 @@ vars.game.initEnemies = function() {
 				"scroll": false,
 				"health": 2000,
 				"initScript": function() {
-					clone(vars.game.scroll + width, 225, "Enemy_Rocket_6", 5)
+					clone(vars.game.scroll + width, 225, "Enemy_Rocket_6", 6)
 				},
 				"mainScript": function() {
 
 				}
 			}
 		}
-		*/
 		// Eden
+		*/
 	]
 }
 vars.game.initEnemies()
