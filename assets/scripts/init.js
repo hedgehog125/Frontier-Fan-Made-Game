@@ -13,7 +13,7 @@ vars.game.boss = {}
 vars.game.saveNow = function(muteSound) {
     var code = JSON.stringify(vars.game.save)
     deleteCookie("Save")
-    setCookie("Save", code)
+    setCookie("Save", code, 1000)
 
     if (! muteSound) {
         playSound("Health_Restored")
