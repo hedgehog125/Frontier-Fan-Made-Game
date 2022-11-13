@@ -2,15 +2,12 @@
 
 // For later releases...
 
-
-// Remove new planet from online version.
+// Save when you get an achievement
+// Add statistics and achievements. (Don't forget backwards compatibility!)
 // Fix bugs described by TODO tags.
 // Change fadeDot error in JAMESCRIPT and update wiki 'getting started' page.
-// Prevent you from playing locked planets! <===
-// Stop enemies from getting hurt by crashing when 'invunerableToCrashes' tag is used.
 // Check planet 2 difficulty.
 // Update JAMESCRIPT to use phaser's collide and overlap functions more intelligently, it will massively speed things up!
-// Add statistics and achivements. (Don't forget backwards compatibility!)
 
 // Add more planets. <== (don't forget to draw and add the poppy thing!!)
 // Different spaceships.
@@ -153,7 +150,7 @@ Assets = {
 		},
 		{
 			"id": "Enemy_Rocket_7_Hidden",
-			"src": "enemy_rocket_7.png"
+			"src": "enemy_rocket_7_hidden.png"
 		},
 		{
 			"id": "Enemy_Rocket_7_Hidden_Hit",
@@ -347,6 +344,7 @@ Assets = {
 			"id": "Locked_Planet",
 			"src": "locked_planet.png"
 		},
+
 		{
 			"id": "Planet_1",
 			"src": "planet_1.png"
@@ -354,6 +352,42 @@ Assets = {
 		{
 			"id": "Planet_2",
 			"src": "planet_2.png"
+		},
+
+		// Achievements
+
+		{
+			"id": "Achv_1",
+			"src": "achv_1.png"
+		},
+		{
+			"id": "Achv_2",
+			"src": "achv_2.png"
+		},
+		{
+			"id": "Achv_1_Hover",
+			"src": "achv_1_hover.png"
+		},
+		{
+			"id": "Achv_2_Hover",
+			"src": "achv_2_hover.png"
+		},
+		{
+			"id": "Close_Button",
+			"src": "close_button.png"
+		},
+		{
+			"id": "Close_Button_Hover",
+			"src": "close_button_hover.png"
+		},
+
+		{
+			"id": "Achievement_Background",
+			"src": "achievement_background.png"
+		},
+		{
+			"id": "Achievement_Info_Background",
+			"src": "achievement_info_background.png"
 		}
 	],
 	"snds" : [
@@ -532,6 +566,9 @@ Assets = {
 
 								vars.game.save.upgrades = {}
 								vars.game.save.upgraded = []
+								vars.game.save.achievements = []
+								vars.game.save.achievementData = {}
+								vars.game.save.stats = {}
 
 								var i = 0
 								var ob = vars.game.config.defaultUpgrades
@@ -545,7 +582,7 @@ Assets = {
 
 								vars.game.save.money = 0
 
-								vars.game.currentPlanet = 0 // Start on the first plannet.
+								vars.game.currentPlanet = 0 // Start on the first planet.
 								vars.game.save.progress = {}
 								vars.game.save.progress.completed = 0
 							}
@@ -557,7 +594,7 @@ Assets = {
 									me.vars.clicked = true
 
 									var ok = false
-									if (getCookie("Save") != "") {
+									if (localStorage.getItem("FrontierSave") != null) {
 										var ok = confirm("Are you sure? You will lose your current progress!")
 									}
 									else {
@@ -673,9 +710,9 @@ Assets = {
 								if (! vars.menu.clickCooldown) {
 									me.vars.clicked = true
 
-									var saveCode = getCookie("Save")
+									var saveCode = localStorage.getItem("FrontierSave")
 
-									if (saveCode == "") {
+									if (saveCode == null) {
 										playSound("Deny_Button")
 									}
 									else {
@@ -689,15 +726,41 @@ Assets = {
 										if (success) { // The JSON parsed fine
 											playSound("Upgrade")
 											vars.game.save = JSON.parse(saveCode)
+
+											var versions = Object.keys(vars.updaters)
+											var versionID = versions.indexOf(vars.game.save.version)
+
 											if (vars.game.config.version != vars.game.save.version) {
-												// Do any necessary updating...
+												while (vars.game.save.version != vars.game.config.version) {
+													if (vars.updaters[vars.game.save.version] == null) {
+														alert("Error while loading code! Unable to update code due to missing updater "
+															+ JSON.stringify(vars.game.save.version)
+															+ ". Your save code will follow..."
+														)
+														alert(saveCode)
+														success = false
+														break
+													}
+													else {
+														vars.game.save = vars.updaters[vars.game.save.version](vars.game.save)
+														versionID++
+														vars.game.save.version = versions[versionID]
+														if (vars.game.save.version == null) {
+															vars.game.save.version = vars.game.config.version
+														}
+													}
+												}
 											}
 
-											vars.menu.switchedMenus = true // So the music doesn't stop/restart
+											if (success) {
+												// Remove listeners from earnt achievements...
+												vars.game.achievementsInternal.removeListenersByAchievementsIDNum(vars.game.save.achievements)
 
-											beginFade(2, ["menu", 1], 0)
+												vars.menu.switchedMenus = true // So the music doesn't stop/restart
+												beginFade(2, ["menu", 1], 0)
+											}
 										}
-										else {
+										if (! success) {
 											playSound("Deny_Button")
 										}
 									}
@@ -735,7 +798,7 @@ Assets = {
 								}
 							}
 							if (me.vars.hovering) {
-								vars.menu.hoverMessage = "Continue your adventure in the Frontier..."
+								vars.menu.hoverMessage = "Continue your adventure into the Frontier..."
 								if (Game.input.activePointer.isDown) {
 									me.vars.clickDelay++
 								}
@@ -1090,6 +1153,7 @@ Assets = {
 					function() {
 						me.anchor.setTo(0)
 						me.scale.setTo(2)
+						me.height = 40
 
 						me.vars.ID = dataForClone[1]
 						me.vars.parent = Sprites[dataForClone[2]]
@@ -1108,7 +1172,7 @@ Assets = {
 
 							var execute = me.vars.parent
 							if (! execute.vars.selected) {
-								execute.addColor("#BFBFBF", 0)
+								execute.addColor("#B3B300", 0)
 							}
 						})
 						me.events.onInputOut.add(function(sprite) {
@@ -1140,7 +1204,7 @@ Assets = {
 							if (! me.vars.clicked) {
 								var execute = me.vars.parent
 								execute.vars.selected = false
-								execute.addColor("black", 0)
+								execute.addColor("Black", 0)
 								me.vars.click = 0
 							}
 							me.vars.click = 0
@@ -1170,11 +1234,36 @@ Assets = {
 							var i = 0
 							var x = (spacing / 2)
 
+							var maxWidth = 0
+							var texts = []
 							for (i in vars.menu.tabs) {
 								var c = vars.menu.tabs[i]
-								clone(x, spacing, undefined, i, c["text"], {
-									"fill": "white"
+								functionForClone = [
+									function() {
+										return me
+									},
+									"after"
+								]
+								var text = clone(x, spacing, undefined, i, c["text"], {
+									"fill": "Yellow",
+									"stroke": "Black",
+									"strokeThickness": 2
 								})
+								if (text.width > maxWidth) {
+									maxWidth = text.width
+								}
+
+								texts[texts.length] = text
+							}
+
+							var newWidth = (Game.width / vars.menu.tabs.length) - ((spacing / vars.menu.tabs.length) * 2) - spacing
+							var newScale = newWidth / maxWidth
+
+							var i = 0
+							for (i in texts) {
+								var c = texts[i]
+
+								c.scale.setTo(newScale)
 							}
 
 							for (i in vars.menu.tabs) {
@@ -1221,24 +1310,67 @@ Assets = {
 									var i = 0
 									var data = vars.menu.tabs[vars.menu.tab]
 
-									for (i in data.content) {
-										var c = data.content[i]
+									if (typeof data.content == "function") {
+										var content = data.content(data)
+									}
+									else {
+										if (data.content == null) {
+											var content = data.content = []
+										}
+										else {
+											var content = data.content
+										}
+									}
+
+									vars.menu.currentMenu = {
+										"JSON": content
+									}
+
+									for (i in content) {
+										var c = content[i]
 										if (c.type == "image" || c.type == "button") {
 											functionForClone = [
 												function() {
 													me.vars.JSONID = dataForClone.JSONID
 													me.vars.tab = dataForClone.tab
-													me.vars.JSON = vars.menu.tabs[me.vars.tab].content[me.vars.JSONID]
+													me.vars.JSON = dataForClone.JSON
 
 													me.anchor.setTo(0.5)
+													return me
 												},
 												"before"
 											]
 
-											cloneSprite(c.x, c.y, c.imgs[c.selected], "Tab_Content_Sprites", {
+											var sprite = cloneSprite(c.x, c.y, c.imgs[c.selected], "Tab_Content_Sprites", {
 												"JSONID": i,
+												"JSON": c,
 												"tab": vars.menu.tab
 											})
+											vars.menu.currentMenu.JSON[i].sprite = sprite
+										}
+										else {
+											if (c.type == "text") {
+												functionForClone = [
+													function() {
+														me.vars.JSONID = dataForClone.JSONID
+														me.vars.tab = dataForClone.tab
+														me.vars.JSON = dataForClone.JSON
+
+														me.anchor.setTo(0.5)
+														return me
+													},
+													"before"
+												]
+
+												var sprite = cloneSprite(c.x, c.y, null, "Tab_Content_Sprites_Text", {
+													"JSONID": i,
+													"JSON": c,
+													"tab": vars.menu.tab
+												}, c.text, {
+													"font": "20pt bold Helvetica"
+												})
+												vars.menu.currentMenu.JSON[i].sprite = sprite
+											}
 										}
 									}
 								}
@@ -1282,7 +1414,7 @@ Assets = {
 						if (me.vars.selected != (vars.menu.tab == me.vars.ID)) {
 							me.vars.selected = vars.menu.tab == me.vars.ID
 							if (me.vars.selected) { // Update me.
-								me.addColor("White", 0)
+								me.addColor("Yellow", 0)
 							}
 							else {
 								me.addColor("Black", 0)
@@ -1398,6 +1530,11 @@ Assets = {
 				],
 				"main": [
 					function() {
+						if (me.vars.tab != vars.menu.tab) {
+							deleteClone()
+							return
+						}
+
 						me.y = vars.menu.logoBob[0] + me.vars.normalY
 
 						if (me.vars.selectedImgWas != me.vars.JSON.selected) {
@@ -1437,17 +1574,167 @@ Assets = {
 						}
 
 						me.vars.JSON.mainfunc()
-
-						if (me.vars.tab != vars.menu.tab) {
-							deleteClone()
-						}
 					}
 				]
 			}
 		},
 		// Content
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+
+						},
+						"stateToRun": ["menu", 1]
+					}
+				]
+			},
+			"id": "Tab_Content_Sprites_Text",
+			"type": "text",
+			"x": 0,
+			"y": 0,
+			"cos": null,
+			"clonescripts": {
+				"init": [
+					function() {
+						if (me.vars.JSON.prefunc != null) {
+							me.vars.JSON.prefunc()
+						}
+
+						me.vars.normalX = me.x
+						me.vars.normalY = me.y
+						me.vars.selectedImgWas = me.vars.JSON.selected
+						if (me.vars.JSON.type == "button") {
+							me.vars.hovering = false
+							me.vars.clicked = false
+							me.vars.click = 0
+
+							me.inputEnabled = true
+
+							me.events.onInputOver.add(function(sprite) {
+								me = sprite
+
+								playSound("Hover_Button")
+
+								me.vars.hovering = true
+								me.vars.clicked = true
+								me.vars.JSON.hoverstart()
+							})
+							me.events.onInputOut.add(function(sprite) {
+								me = sprite
+
+								me.vars.hovering = false
+								me.vars.JSON.hoverend()
+							})
+							me.events.onInputDown.add(function(sprite) {
+								me = sprite
+								me.vars.hovering = true
+
+								if (me.vars.JSON.active) {
+									playSound("Click_Button")
+									me.vars.JSON.clickfunc()
+								}
+								else {
+									playSound("Deny_Button")
+								}
+							})
+							me.events.onInputUp.add(function(sprite) {
+								me.vars.clicked = false
+							})
+						}
+						else {
+							me.vars.hovering = false
+							me.vars.clicked = false
+							me.vars.click = 0
+
+							me.inputEnabled = true
+
+							me.events.onInputOver.add(function(sprite) {
+								me = sprite
+
+								me.vars.hovering = true
+								me.vars.clicked = true
+							})
+							me.events.onInputOut.add(function(sprite) {
+								me = sprite
+
+								me.vars.hovering = false
+							})
+							me.events.onInputDown.add(function(sprite) {
+								me = sprite
+								me.vars.hovering = true
+							})
+							me.events.onInputUp.add(function(sprite) {
+								me.vars.clicked = false
+							})
+						}
+
+						me.vars.JSON.initfunc()
+					}
+				],
+				"main": [
+					function() {
+						if (me.vars.tab != vars.menu.tab) {
+							deleteClone()
+							return
+						}
+
+						me.y = vars.menu.logoBob[0] + me.vars.normalY
+
+						if (me.vars.selectedImgWas != me.vars.JSON.selected) {
+							me.vars.selectedImgWas = me.vars.JSON.selected
+							me.loadTexture(me.vars.JSON.imgs[me.vars.JSON.selected])
+						}
+
+						if (me.vars.hovering) {
+							if (me.vars.JSON.hoverMessage != undefined) {
+								if (typeof me.vars.JSON.hoverMessage == "function") {
+									vars.menu.hoverMessage = me.vars.JSON.hoverMessage()
+								}
+								else {
+									vars.menu.hoverMessage = me.vars.JSON.hoverMessage
+								}
+							}
+						}
+						if (me.vars.JSON.type == "button") {
+							if (me.vars.click == 1) {
+								if ((! me.vars.hovering) || ((! me.vars.clicked) && touchscreen)) {
+									if (! touchscreen) {
+										me.vars.hovering = false
+									}
+									me.vars.clicked = false
+									me.vars.JSON.hoverend()
+								}
+								me.vars.click = 0
+							}
+							if (Game.input.activePointer.isDown) {
+								if (me.vars.click == 0) {
+									me.vars.click = 1
+								}
+							}
+							else {
+								me.vars.clicked = false
+							}
+						}
+
+						me.vars.JSON.mainfunc()
+					}
+				]
+			}
+		},
+		// Content text
 
 		// Game
+
 
 		{
 			"scripts": {
@@ -1545,6 +1832,137 @@ Assets = {
 			"fixedToCamera": true
 		},
 		// Health bar sprite
+
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							Sprites.Planet_Progress_Marker.alpha = 1
+							Sprites.Planet_Progress_Frame.alpha = 0.8
+							Sprites.Planet_Progress_Marker.visible = true
+							Sprites.Planet_Progress_Frame.visible = true
+
+							me.vars.renderBar = function() {
+								me.ctx.clearRect(0, 0, me.width, me.height)
+
+								me.ctx.lineCap = "round"
+
+								me.ctx.lineWidth = me.height
+								me.ctx.strokeStyle = "#D9D9D9"
+
+								me.ctx.beginPath()
+								me.ctx.moveTo(me.height - 5, me.height / 2)
+								me.ctx.lineTo(me.width - (me.height - 5), me.height / 2)
+								me.ctx.stroke()
+
+								me.ctx.lineWidth = me.height - 5
+								me.ctx.strokeStyle = "#20FF20"
+								me.ctx.beginPath()
+								me.ctx.moveTo(me.height - 5, me.height / 2)
+
+								var x = Math.max(((vars.game.scroll / vars.game.planets[vars.game.currentPlanet].boss.distance) * me.width) - (me.height - 5), (me.height - 5))
+								var x = Math.min(Math.max(x, (me.height - 2.5)), me.width - (me.height - 2.5))
+								me.ctx.lineTo(x, me.height / 2)
+								me.ctx.stroke()
+
+								Sprites.Planet_Progress_Marker.cameraOffset.x = x - 1.25
+								Sprites.Planet_Progress_Marker.cameraOffset.y = Sprites.Planet_Progress_Frame.y - (me.height / 2)
+
+								if (vars.game.scroll >= vars.game.planets[vars.game.currentPlanet].boss.distance) {
+									Sprites.Planet_Progress_Marker.alpha = Sprites.Planet_Progress_Marker.alpha - 0.01
+									Sprites.Planet_Progress_Frame.alpha = Sprites.Planet_Progress_Frame.alpha - 0.01
+									if (Sprites.Planet_Progress_Marker.alpha <= 0) {
+										Sprites.Planet_Progress_Marker.visible = false
+									}
+									if (Sprites.Planet_Progress_Frame.alpha <= 0) {
+										Sprites.Planet_Progress_Frame.visible = false
+									}
+								}
+							}
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+							me.dirty = true
+							me.vars.renderBar()
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Planet_Progress",
+			"type": "canvas",
+			"width": 250,
+			"height": 25
+		},
+		// Planet progress
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.anchor.setTo(0, 1)
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+							me.bringToTop()
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Planet_Progress_Frame",
+			"x": 0,
+			"y": 450,
+			"type": "canvasFrame",
+			"bitmapID": "Planet_Progress",
+			"fixedToCamera": true
+		},
+		// Planet progress sprite
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.fixedToCamera = true
+
+							me.width = 25
+							me.height = 25
+							me.anchor.setTo(0.5)
+
+							me.loadTexture("Planet_" + (vars.game.currentPlanet + 1))
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() {
+							me.bringToTop()
+
+							me.width = 25
+							me.height = 25
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Planet_Progress_Marker",
+			"x": 0,
+			"y": 0
+		},
+		// Planet progress marker
+
+
+
 
 		{
 			"scripts": {
@@ -1785,6 +2203,8 @@ Assets = {
 
 							me.alpha = 1
 							me.vars.animationFrame = 0
+							me.vars.animationMoveDelay = 0
+
 							vars.game.flash = 0
 							vars.game.deathAnimationTick = 0
 							vars.game.fireCooldown = 0
@@ -1807,6 +2227,9 @@ Assets = {
 							if (vars.game.deathAnimationTick == 0 && (! me.vars.won)) {
 								if (vars.game.zoomAnimation == 0) {
 									// Stop me from going offscreen.
+									var xWas = me.cameraOffset.x
+									var yWas = me.cameraOffset.y
+
 									var glideX = inX
 									var glideY = inY
 									if (glideX - (me.width / 2) < 0) {
@@ -1823,29 +2246,36 @@ Assets = {
 									}
 
 									glideTo(glideX, glideY, vars.game.save.upgrades.speed)
+									var movedDistance = Math.abs(xWas - me.cameraOffset.x) + Math.abs(yWas - me.cameraOffset.y)
+
+									me.vars.animationMoveDelay = me.vars.animationMoveDelay - (movedDistance * 2)
 								}
 								else {
 									me.cameraOffset.x = 50
 									me.cameraOffset.y = Game.world.centerY
 								}
-								me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
+								me.vars.animationMoveDelay--
+								if (me.vars.animationMoveDelay <= 0) {
+									me.vars.animationMoveDelay = 5
+									me.vars.animationFrame = me.vars.animationFrame + (1 / 5)
+								}
 								if (Math.floor(me.vars.animationFrame) > 3) {
 									me.vars.animationFrame = 0
 								}
 								if (vars.game.flash == 0) {
 									if (touchingClones("Enemy_Rockets")) { // Hit enemy spaceship.
-										Game.camera.shake(me.width / 5000, 200)
+										Game.camera.shake(me.width / 10000, 150)
 										playSound("Hit")
 
 										vars.game.flash = 20
-										var enemy = vars.game.planets[vars.game.currentPlanet]["enemies"][Sprites[touchInfo].vars.type]
+										var enemy = Sprites[touchInfo].vars.JSON
 										var damage = enemy["damage"]
 										var enemySprite = Sprites[touchInfo]
 
 										if (enemySprite.vars.hitFlash == 0) {
 											if (enemy.hitCos != null) {
 												if (typeof enemy.hitCos == "function") {
-													enemySprite.loadTexture(enemy.hitCos())
+													enemySprite.loadTexture(enemy.hitCos(enemySprite))
 												}
 												else {
 													enemySprite.loadTexture(enemy.hitCos)
@@ -1881,6 +2311,46 @@ Assets = {
 															"parent": enemySprite
 														}, null, null, 100, 10)
 													}
+
+													triggerListener("enemy.hurt", {
+														"type": [
+															{
+																"accept": 2
+															}
+														]
+													}, {
+														"type": 2,
+														"killed": false,
+														"spaceship1": enemySprite
+													})
+												}
+												else {
+													if (enemySprite.vars.JSON.onDeath != null) {
+														enemySprite.vars.JSON.onDeath({
+															"cause": 1
+														})
+													}
+													triggerListener("enemy.hurt", {
+														"type": [
+															{
+																"accept": 2
+															}
+														]
+													}, {
+														"type": 2,
+														"killed": true,
+														"spaceship1": enemySprite
+													})
+													triggerListener("enemy.death", {
+														"type": [
+															{
+																"accept": 2
+															}
+														]
+													}, {
+														"type": 2,
+														"spaceship1": enemySprite
+													})
 												}
 											}
 										}
@@ -2122,6 +2592,12 @@ Assets = {
 						me.vars.following = null
 						me.vars.turnSmooth = 0
 						me.vars.turnTo = 0
+						if (Math.random() > 0.5) {
+							me.vars.homingOn = true
+						}
+						else {
+							me.vars.homingOn = false
+						}
 						me.vars.follow = function(enemy) {
 							if (enemy != null) {
 								if (Sprites.Bullet.vars.tactics.targets[enemy] == null) {
@@ -2174,7 +2650,7 @@ Assets = {
 							me.vars.turnSmooth = 1
 						}
 
-						if (vars.game.save.upgrades.homing > 0) { // Homing
+						if (vars.game.save.upgrades.homing > 0 && me.vars.homingOn) { // Homing
 							var i = 0
 							var closestDis = Infinity
 							var closest = null
@@ -2233,6 +2709,10 @@ Assets = {
 						}
 
 						if (me.x > Game.world.width || me.x < 0 || me.y < 0 || me.y > Game.height) {
+							triggerListener("enemy.despawn", {}, {
+								"spaceship1": me
+							})
+
 							deleteClone()
 							return
 						}
@@ -2298,7 +2778,7 @@ Assets = {
 										var a = me.vars.chancesOrder[i]
 										var c = vars.game.planets[vars.game.currentPlanet].enemies[a]
 										if (rnd <= me.vars.chances[i]) {
-											clone(Game.world.width, Game.rnd.between(0, Game.height), c.cos, a)
+											clone(Game.world.width, Game.rnd.integerInRange(0, Game.height), c.cos, a)
 											break
 										}
 										var rnd = rnd - me.vars.chances[i]
@@ -2363,8 +2843,27 @@ Assets = {
 					function() {
 						enableTouching()
 
+						me.vars.cloneObject = function(obj) {
+							if (Object.assign != null) {
+								return Object.assign({}, obj)
+							}
+							else { // Fallback
+								var newObject = {}
+								var i = 0
+								for (i in obj) {
+									if (obj[i] == "object") {
+										newObject[i] = this.cloneObject(obj[i])
+									}
+									else {
+										newObject[i] = obj[i]
+									}
+								}
+								return newObject
+							}
+						}
+
 						me.vars.type = dataForClone
-						me.vars.JSON = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]
+						me.vars.JSON = me.vars.cloneObject(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]) // To clone it and keep it separate
 						me.vars.hp = me.vars.JSON.health
 
 						me.vars.hitFlash = 0
@@ -2446,7 +2945,7 @@ Assets = {
 
 									if (enemy.hitCos != null) {
 										if (typeof enemy.hitCos == "function") {
-											me.loadTexture(enemy.hitCos())
+											me.loadTexture(enemy.hitCos(me))
 										}
 										else {
 											me.loadTexture(enemy.hitCos)
@@ -2464,6 +2963,17 @@ Assets = {
 										if (me.vars.JSON.hurtBoss) {
 											vars.game.boss.health = vars.game.boss.health - damage
 										}
+										triggerListener("enemy.hurt", {
+											"type": [
+												{
+													"accept": 0
+												}
+											]
+										}, {
+											"type": 0,
+											"killed": false,
+											"spaceship1": me
+										})
 
 										if (me.vars.healthbar != null) { // Set the healthbar's health
 											me.vars.healthbar.vars.setHealth(me.vars.hp, me.vars.JSON.health, me.vars.healthbar)
@@ -2483,6 +2993,11 @@ Assets = {
 										}
 									}
 									else {
+										if (me.vars.JSON.onDeath != null) {
+											me.vars.JSON.onDeath({
+												"cause": 0
+											})
+										}
 										var bounus = 0
 										if (me.vars.JSON.defeatBonus != null) {
 											var bounus = me.vars.JSON.defeatBonus
@@ -2492,6 +3007,32 @@ Assets = {
 										if (me.vars.JSON.hurtBoss) {
 											vars.game.boss.health = vars.game.boss.health - healthWas
 										}
+										triggerListener("enemy.hurt", {
+											"type": [
+												{
+													"accept": 0
+												}
+											],
+											"includeDeath": [
+												{
+													"accept": true
+												}
+											]
+										}, {
+											"type": 0,
+											"killed": true,
+											"spaceship1": me
+										})
+										triggerListener("enemy.death", {
+											"type": [
+												{
+													"accept": 0
+												}
+											]
+										}, {
+											"type": 0,
+											"spaceship1": me
+										})
 
 										if (me.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
 											me.vars.healthbar.vars.destroyed = true
@@ -2557,6 +3098,12 @@ Assets = {
 
 								if ((! me.vars.JSON.invunerable) || (! me.vars.JSON.invunerableToCrashes)) {
 									if (me.vars.hp - damage < 0) {
+										if (me.vars.JSON.onDeath != null) {
+											me.vars.JSON.onDeath({
+												"cause": 2,
+												"otherRocket": hitRocket
+											})
+										}
 										var bounus = 0
 										if (me.vars.JSON.defeatBonus != null) {
 											var bounus = me.vars.JSON.defeatBonus
@@ -2570,6 +3117,30 @@ Assets = {
 										if (me.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
 											me.vars.healthbar.vars.destroyed = true
 										}
+
+										triggerListener("enemy.hurt", {
+											"type": [
+												{
+													"accept": 1
+												}
+											]
+										}, {
+											"type": 1,
+											"killed": true,
+											"spaceship1": me,
+											"spaceship2": hitRocket
+										})
+										triggerListener("enemy.death", {
+											"type": [
+												{
+													"accept": 1
+												}
+											]
+										}, {
+											"type": 1,
+											"spaceship1": me,
+											"spaceship2": hitRocket
+										})
 									}
 									else {
 										me.vars.hp = me.vars.hp - damage // Damage me.
@@ -2594,6 +3165,19 @@ Assets = {
 												"parent": me
 											}, null, null, 100, 10)
 										}
+
+										triggerListener("enemy.hurt", {
+											"type": [
+												{
+													"accept": 1
+												}
+											]
+										}, {
+											"type": 1,
+											"killed": false,
+											"spaceship1": me,
+											"spaceship2": hitRocket
+										})
 									}
 								}
 
@@ -2602,6 +3186,12 @@ Assets = {
 
 								if ((! hitRocket.vars.JSON.invunerable) || (! hitRocket.vars.JSON.invunerableToCrashes)) {
 									if (hitRocket.vars.hp - damage < 0) {
+										if (hitRocket.vars.JSON.onDeath != null) {
+											hitRocket.vars.JSON.onDeath({
+												"cause": 2,
+												"otherRocket": me
+											})
+										}
 										var bounus = 0
 										if (hitRocket.vars.JSON.defeatBonus != null) {
 											var bounus = hitRocket.vars.JSON.defeatBonus
@@ -2615,6 +3205,31 @@ Assets = {
 										if (hitRocket.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
 											hitRocket.vars.healthbar.vars.destroyed = true
 										}
+
+										triggerListener("enemy.hurt", {
+											"type": [
+												{
+													"accept": 1
+												}
+											]
+										}, {
+											"type": 1,
+											"killed": true,
+											"spaceship1": me,
+											"spaceship2": hitRocket
+										})
+										triggerListener("enemy.death", {
+											"type": [
+												{
+													"accept": 1
+												}
+											]
+										}, {
+											"type": 1,
+											"spaceship1": me,
+											"spaceship2": hitRocket
+										})
+
 									}
 									else {
 										hitRocket.vars.hp = hitRocket.vars.hp - damage // Damage me.
@@ -2666,7 +3281,7 @@ Assets = {
 
 								if (enemy.hitCos != null) {
 									if (typeof enemy.hitCos == "function") {
-										me.loadTexture(enemy.hitCos())
+										me.loadTexture(enemy.hitCos(me))
 									}
 									else {
 										me.loadTexture(enemy.hitCos)
@@ -2680,7 +3295,7 @@ Assets = {
 
 								if (enemy.hitCos != null) {
 									if (typeof enemy.hitCos == "function") {
-										hitRocket.loadTexture(enemy.hitCos())
+										hitRocket.loadTexture(enemy.hitCos(hitRocket))
 									}
 									else {
 										hitRocket.loadTexture(enemy.hitCos)
@@ -2727,19 +3342,24 @@ Assets = {
 						if (me.vars.hitFlash > 0) {
 							me.vars.hitFlash--
 							if (me.vars.hitFlash == 0) {
-								me.loadTexture(vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["cos"])
+								me.loadTexture(me.vars.JSON.cos)
 							}
 						}
 						if (me.x < Game.world.camera.x - me.width) {
 							if (me.vars.healthbar != null) { // Tell the healthbar that I've been destroyed
 								me.vars.healthbar.vars.destroyed = true
 							}
+
+							triggerListener("enemy.despawn", {}, {
+								"spaceship1": me
+							})
+
 							deleteClone()
 							return
 						}
 						if (me.vars.hp <= 0) {
 							playSound("Boom")
-							var script = vars.game.planets[vars.game.currentPlanet]["enemies"][me.vars.type]["deathScript"]
+							var script = me.vars.JSON.deathScript
 							if (me.vars.healthbar != null) {
 								me.vars.healthbar.vars.destroyed = true
 							}
@@ -2846,7 +3466,7 @@ Assets = {
 				"init": [
 					function() {
 						if (! dataForClone["disableScreenshake"]) {
-							Game.camera.shake(dataForClone["size"] / 5000, 200)
+							Game.camera.shake(me.width / 10000, 150)
 						}
 
 						me.width = dataForClone["size"]
@@ -2902,8 +3522,243 @@ Assets = {
 					}
 				]
 			}
-		}
+		},
 		// Money Splash
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() {
+							me.visible = false
+
+							me.vars.showTime = -1
+							me.vars.showID = 0
+							me.vars.notificationData = {}
+							me.vars.fadeDir = 0
+							me.vars.transparency = 0.7
+
+							me.anchor.setTo(0.5, 1)
+							me.scale.setTo(10)
+
+							me.fixedToCamera = true
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": function() { // TODO: Test with multiple!
+							if (me.vars.showTime < 0) {
+								if (vars.game.notificationQueueLength > 0) {
+									var i = 0
+									for (i in vars.game.notificationQueue) {
+										var c = vars.game.notificationQueue[i]
+										if (c != null) {
+											me.vars.notificationData = JSON.parse(JSON.stringify(c))
+											me.vars.showID = i
+											break
+										}
+									}
+
+									vars.game.notificationQueue[i] = undefined
+									vars.game.notificationQueueLength--
+									if (vars.game.notificationQueueLength < 1) {
+										vars.game.notificationQueue = []
+									}
+
+									me.visible = true
+									me.alpha = 0
+
+									playSound("Health_Restored")
+
+									me.vars.fadeDir = 0.05
+									me.vars.showTime = 180
+								}
+							}
+							else {
+								me.bringToTop()
+								if (me.vars.showTime == 0) {
+									if (me.alpha != 0) {
+										me.vars.fadeDir = -0.02 // Slower than the fade in
+										me.vars.iconSprite.vars.fadeDir = -0.1 // Faster than ^
+										me.vars.textSprites.title.vars.fadeDir = -0.1
+										me.vars.textSprites.brief.vars.fadeDir = -0.1
+										me.vars.textSprites.detail.vars.fadeDir = -0.1
+									}
+									else {
+										me.visible = false
+										me.vars.showTime = -1
+									}
+								}
+								else {
+									if (me.vars.fadeDir == 0) {
+										me.vars.showTime--
+									}
+								}
+								me.alpha = me.alpha + me.vars.fadeDir
+								me.width = 800 * (me.alpha / me.vars.transparency)
+
+								if (me.vars.fadeDir > 0) {
+									if (me.alpha >= me.vars.transparency) {
+										me.alpha = me.vars.transparency
+										me.vars.fadeDir = 0
+
+										functionForClone = [
+											function() {
+												return me
+											},
+											"before"
+										]
+										me.vars.iconSprite = clone(100, 400, me.vars.notificationData.icon, me)
+
+										me.vars.textSprites = {}
+
+										functionForClone = [
+											function() {
+												return me
+											},
+											"before"
+										]
+										me.vars.textSprites.title = cloneSprite(160, 350, null, "Notifications_Text", me, me.vars.notificationData.title, {
+											"font": "25pt Courier",
+											"fill": "gold"
+										})
+
+										functionForClone = [
+											function() {
+												return me
+											},
+											"before"
+										]
+										me.vars.textSprites.brief = cloneSprite(160, 385, null, "Notifications_Text", me, me.vars.notificationData.brief, {
+											"font": "20pt Helvetica",
+											"fill": "orange"
+										})
+										functionForClone = [
+											function() {
+												return me
+											},
+											"before"
+										]
+										me.vars.textSprites.detail = cloneSprite(160, 430, null, "Notifications_Text", me, me.vars.notificationData.detail, {
+											"font": "10pt Helvetica",
+											"fill": "black"
+										})
+									}
+								}
+								if (me.vars.fadeDir < 0) {
+									if (me.alpha <= 0) {
+										me.alpha = 0
+										me.vars.fadeDir = 0
+									}
+								}
+							}
+						},
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Notifications_Images",
+			"x": 400,
+			"y": 450,
+			"cos": "Achievement_Background",
+			"clonescripts": {
+				"init": [
+					function() {
+						me.vars.fadeDir = 0.02
+						me.anchor.setTo(0.5, 0.5)
+
+						me.vars.mainSprite = dataForClone
+						me.fixedToCamera = true
+						me.width = 90
+						me.height = 90
+					}
+				],
+				"main": [
+					function() {
+						me.alpha = me.alpha + me.vars.fadeDir
+						me.width = 90 * me.alpha
+						me.bringToTop()
+
+						if (me.vars.fadeDir > 0) {
+							if (me.alpha >= 1) {
+								me.alpha = 1
+								me.vars.fadeDir = 0
+							}
+						}
+						if (me.vars.fadeDir < 0) {
+							if (me.alpha <= 0) {
+								me.alpha = 0
+								me.vars.fadeDir = 0
+								deleteClone()
+							}
+						}
+					}
+				]
+			}
+		},
+		// Notifications: Images
+		{
+			"scripts": {
+				"init": [
+					{
+						"code": function() { // Just so the clones run their scripts
+							me.visible = false
+						},
+						"stateToRun": ["game"]
+					}
+				],
+				"main": [
+					{
+						"code": null, // Just so the clones run their scripts
+						"stateToRun": ["game"]
+					}
+				]
+			},
+			"id": "Notifications_Text",
+			"x": 110,
+			"y": 440,
+			"text": "",
+			"settings": {
+				"font": "10pt Helvetica",
+				"fill": "black"
+			},
+			"type": "text",
+			"clonescripts": {
+				"init": [
+					function() {
+						me.vars.fadeDir = 0.02
+
+						me.vars.mainSprite = dataForClone
+						me.fixedToCamera = true
+
+						me.vars.fullWidth = me.width
+					}
+				],
+				"main": [
+					function() {
+						me.alpha = me.alpha + me.vars.fadeDir
+						me.width = me.vars.fullWidth * me.alpha
+						me.bringToTop()
+
+						if (me.vars.fadeDir > 0) {
+							if (me.alpha >= 1) {
+								me.alpha = 1
+								me.vars.fadeDir = 0
+							}
+						}
+						if (me.vars.fadeDir < 0) {
+							if (me.alpha <= 0) {
+								me.alpha = 0
+								me.vars.fadeDir = 0
+								deleteClone()
+							}
+						}
+					}
+				]
+			}
+		}
+		// Notifications: Text
 	],
 	"scripts": {
 		"init": [
@@ -2970,8 +3825,8 @@ Assets = {
 				"code":	function() {
 					vars.menu.hoverMessage = ""
 
-					Game.camera.x = inX * vars.menu.backgroundSize
-					Game.camera.y = inY * vars.menu.backgroundSize
+					Game.camera.x = ((inX * vars.menu.backgroundSize) / Game.world.width) * (Game.world.width - Game.width)
+					Game.camera.y = ((inY * vars.menu.backgroundSize) / Game.world.height) * (Game.world.height - Game.height)
 					if (vars.menu.logoBob[0] <= 0 - vars.menu.logoBob[2]) {
 						vars.menu.logoBob[1] = 0
 					}

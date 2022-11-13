@@ -10,20 +10,20 @@ vars.game = {}
 vars.game.muteSaveSound = false
 vars.game.boss = {}
 
-vars.game.saveNow = function(muteSound) {
-    var code = JSON.stringify(vars.game.save)
-    deleteCookie("Save")
-    setCookie("Save", code)
+vars.game.saveNow = function(muteSound, hideMessage) {
+    localStorage.setItem("FrontierSave", JSON.stringify(vars.game.save))
 
     if (! muteSound) {
         playSound("Health_Restored")
     }
 
-    Sprites.Game_Saved_Message.fixedToCamera = true
+    if (! hideMessage) {
+        Sprites.Game_Saved_Message.fixedToCamera = true
 
-    Sprites.Game_Saved_Message.cameraOffset.x = Game.width / 2
-    Sprites.Game_Saved_Message.cameraOffset.y = 440
-    Sprites.Game_Saved_Message.visible = true
+        Sprites.Game_Saved_Message.cameraOffset.x = Game.width / 2
+        Sprites.Game_Saved_Message.cameraOffset.y = 440
+        Sprites.Game_Saved_Message.visible = true
+    }
 }
 
 // Config
@@ -31,7 +31,7 @@ vars.game.saveNow = function(muteSound) {
 vars.game.config = {}
 vars.game.config.minY = 30
 vars.game.config.autoSaveTime = 60 // Seconds (1 min)
-vars.game.config.version = "1.0"
+vars.game.config.version = "1.1"
 vars.game.saveDelay = 1
 vars.game.startedPlaying = false
 

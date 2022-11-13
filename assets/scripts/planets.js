@@ -31,6 +31,7 @@ vars.game.planetsEnemies.eggSpaceship = {
 		if (me.vars.fireCooldown < 0) {
 			if (me.x < vars.game.scroll + Game.width) { // Make sure that I'm onscreen.
 				me.vars.fireCooldown = Game.rnd.integerInRange(200, 400)
+
 				playSound("Launch")
 
 				clone(me.x, me.y, "Enemy_Bullet", 2)
@@ -144,7 +145,7 @@ vars.game.planetsEnemies.bird = {
 			}
 		}
 
-		me.vars.fireCooldown = Game.rnd.integerInRange(40, 60)
+		me.vars.fireCooldown = Game.rnd.integerInRange(80, 100)
 
 		me.body.setSize(29, 8, 0, 11.5)
 	},
@@ -155,7 +156,7 @@ vars.game.planetsEnemies.bird = {
 		if (me.vars.fireCooldown <= 0) {
 			if (me.x < vars.game.scroll + Game.width) { // Make sure that I've shown myself first.
 				playSound("Launch")
-				me.vars.fireCooldown = Game.rnd.integerInRange(40, 60)
+				me.vars.fireCooldown = Game.rnd.integerInRange(80, 100)
 
 				if (Game.rnd.integerInRange(0, 5) == 0) {
 					clone(me.x, me.y + 40, "Enemy_Rocket_9", 3)
@@ -228,19 +229,28 @@ vars.game.planetsEnemies.cuteWall = {
 }
 vars.game.planetsEnemies.darkSnake = {
 	"initScript": function() {
-		//me.alpha = 0.2 // Almost invisible.
+		me.alpha = 0.8 // Partly invisible.
 		me.scale.setTo(-2, 2)
+
+		if (Loaded.snds.Suspense.isPlaying || vars.game.deathAnimationTick != 0) { // Don't spawn when there's another snake or the player's dead
+			deleteClone()
+			return
+		}
 
 		playSound("Suspense")
 
 		me.vars.startX = me.x - vars.game.scroll
 		me.vars.startY = me.y
-
-		// TODO: What if the player dies and the sound is playing? And what if I die?
+		me.fixedToCamera = true
 	},
 	"mainScript": function() {
-		me.x = vars.game.scroll + (me.vars.startX + ((Sprites.Rocket.cameraOffset.x - me.vars.startX) / (Loaded.snds.Suspense.duration - (Loaded.snds.Suspense.currentTime / 1000))))
-		me.y = me.vars.startY + ((Sprites.Rocket.y - me.vars.startY) / (Loaded.snds.Suspense.duration - Loaded.snds.Suspense.currentTime))
+		me.cameraOffset.x = me.vars.startX + ((Sprites.Rocket.cameraOffset.x - me.vars.startX) * ((Loaded.snds.Suspense.currentTime / 1000) / Loaded.snds.Suspense.duration))
+		if (Math.abs(Sprites.Rocket.cameraOffset.x - me.cameraOffset.x) < 100) {
+			me.cameraOffset.y = me.vars.startY + ((Sprites.Rocket.y - me.vars.startY) * ((Loaded.snds.Suspense.currentTime / 1000) / Loaded.snds.Suspense.duration))
+		}
+		if (! Loaded.snds.Suspense.isPlaying) {
+			me.vars.hp = -1
+		}
 	}
 }
 
@@ -286,6 +296,7 @@ vars.game.planetsEnemies.frogBoss = {
 						me.vars.activeAttack = 1
 						me.vars.attackData.direction = 0
 						me.vars.attackData.delay = 0
+						me.vars.attackData.buildUpTick = 0;
 						me.vars.attackDelay = Game.rnd.integerInRange(150, 200)
 
 						playSound("Boom") // Comes out as a zoom.
@@ -299,7 +310,7 @@ vars.game.planetsEnemies.frogBoss = {
 							if (me.vars.activeAttack == 3) {
 								playSound("Launch")
 
-								me.vars.attackDelay = Game.rnd.integerInRange(100, 200)
+								me.vars.attackDelay = Game.rnd.integerInRange(200, 250)
 								functionForClone = [
 									function() {
 										me.vars.boss = dataForClone[1]
@@ -329,37 +340,43 @@ vars.game.planetsEnemies.frogBoss = {
 			}
 			else {
 				if (me.vars.activeAttack == 1) { // Ram
-					if (me.vars.attackData.direction == 0) {
-						me.vars.xVel = me.vars.xVel - 10
-						if (me.x - vars.game.scroll <= 0) {
-							me.vars.xVel = 0
-							Game.camera.shake(0.05, 200)
-
-							me.vars.attackData.direction = 1
-							me.vars.attackData.delay = Game.rnd.integerInRange(120, 200)
-						}
-					}
-					else {
-						if (me.vars.attackData.direction == 1) {
-							me.vars.attackData.delay--
-							if (me.vars.attackData.delay <= 0) {
-								me.vars.attackData.delay = 0
-								me.vars.attackData.direction = 2
-
-								playSound("Boom") // Comes out as a zoom.
+					if (me.vars.attackData.buildUpTick == 45) {
+						if (me.vars.attackData.direction == 0) {
+							me.vars.xVel = me.vars.xVel - 10
+							if (me.x - vars.game.scroll <= 0) {
+								me.vars.xVel = 0
+								Game.camera.shake(0.05, 200)
+	
+								me.vars.attackData.direction = 1
+								me.vars.attackData.delay = Game.rnd.integerInRange(45, 90)
 							}
 						}
 						else {
-							if (me.vars.attackData.direction == 2) {
-								me.vars.xVel = me.vars.xVel + 10
-								if ((me.x - vars.game.scroll) + me.vars.xVel >= 450) {
-									me.vars.xVel = 0
-									Game.camera.shake(0.05, 200)
-
-									me.vars.activeAttack = 0 // Attack ended.
+							if (me.vars.attackData.direction == 1) {
+								me.vars.attackData.delay--
+								if (me.vars.attackData.delay <= 0) {
+									me.vars.attackData.delay = 0
+									me.vars.attackData.direction = 2
+	
+									playSound("Boom") // Comes out as a zoom.
+								}
+							}
+							else {
+								if (me.vars.attackData.direction == 2) {
+									me.vars.xVel = me.vars.xVel + 10
+									if ((me.x - vars.game.scroll) + me.vars.xVel >= 450) {
+										me.vars.xVel = 0
+										Game.camera.shake(0.05, 200)
+	
+										me.vars.activeAttack = 0 // Attack ended.
+									}
 								}
 							}
 						}
+					}
+					else {
+						me.vars.attackData.buildUpTick++;
+						me.x += 0.25;
 					}
 				}
 				else {
@@ -617,7 +634,6 @@ vars.game.initEnemies = function() {
 			}
 		},
 		// Oytera
-		/*
 		{
 			"name": "Eden",
 			"enemies": [
@@ -636,7 +652,7 @@ vars.game.initEnemies = function() {
 					"defeatBonus": 300,
 					"chance": 5,
 					"health": 80,
-					"damage": 6,
+					"damage": 5,
 					"cos": "Enemy_Rocket_4",
 					"size": 3,
 					"initScript": enemies.bird.initScript,
@@ -649,7 +665,7 @@ vars.game.initEnemies = function() {
 					"disableHitTest": true,
 					"disableSpawnMove": true,
 					"health": 1,
-					"damage": 15,
+					"damage": 10,
 					"cos": "Enemy_Rocket_8",
 					"size": 2,
 					"initScript": enemies.birdPoison.initScript,
@@ -661,7 +677,7 @@ vars.game.initEnemies = function() {
 					"preventShooting": true,
 					"disableSpawnMove": true,
 					"health": 1,
-					"damage": 50,
+					"damage": 20,
 					"cos": "Enemy_Rocket_9",
 					"size": 0.75,
 					"initScript": enemies.birdNutsAndBolts.initScript,
@@ -672,10 +688,10 @@ vars.game.initEnemies = function() {
 					"invunerableToCrashes": true,
 					"disableSpaceshipKnockback": true,
 					"disableBulletKnockback": true,
-					"defeatBonus": 1000,
+					"defeatBonus": 250,
 					"chance": 10,
 					"health": 300,
-					"damage": 20,
+					"damage": 25,
 					"cos": "Enemy_Rocket_5_0",
 					"hitCos": "Enemy_Rocket_5_Hit",
 					"size": 9,
@@ -685,11 +701,18 @@ vars.game.initEnemies = function() {
 				// Cute wall of death
 				{
 					"disableHitTest": true,
-					"chance": 40,
-					"health": 40,
-					"damage": 30,
-					"cos": "Enemy_Rocket_7",
-					"hitCos": "Enemy_Rocket_7_Hit",
+					"defeatBonus": 100,
+					"deathScript": function(info) {
+						stopSound("Suspense")
+					},
+					"chance": 1, // Change this
+					"health": 20,
+					"damage": 25,
+					"cos": "Enemy_Rocket_7_Hidden",
+					"hitCos": function(rocket) {
+						rocket.vars.JSON.cos = "Enemy_Rocket_7"
+						return "Enemy_Rocket_7_Hit"
+					},
 					"size": 2,
 					"initScript": enemies.darkSnake.initScript,
 					"mainScript": enemies.darkSnake.mainScript
@@ -704,7 +727,7 @@ vars.game.initEnemies = function() {
 					"hurtBoss": true,
 					"chance": 0,
 					"health": 2000,
-					"damage": 20,
+					"damage": 25,
 					"cos": "Enemy_Rocket_6",
 					"size": 9,
 					"initScript": enemies.frogBoss.initScript,
@@ -736,7 +759,7 @@ vars.game.initEnemies = function() {
 					"disableSpaceshipKnockback": true,
 					"chance": 0,
 					"health": 15,
-					"damage": 20,
+					"damage": 30,
 					"cos": "Enemy_Rocket_10",
 					"size": 3,
 					"anchor": {
@@ -755,7 +778,7 @@ vars.game.initEnemies = function() {
 					"disableSpaceshipKnockback": true,
 					"chance": 0,
 					"health": 1,
-					"damage": 5,
+					"damage": 15,
 					"cos": "Enemy_Rocket_11",
 					"size": 3,
 					"anchor": {
@@ -782,7 +805,6 @@ vars.game.initEnemies = function() {
 			}
 		}
 		// Eden
-		*/
 	]
 }
 vars.game.initEnemies()

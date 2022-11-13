@@ -204,7 +204,7 @@ vars.menu.menus.JSON.upgrades = [
                     me.vars.visibleWas = null
                 },
                 "mainfunc": function() {
-                    var plannetSprite = vars.menu.tabs[vars.menu.tab].content[0]
+                    var plannetSprite = vars.menu.currentMenu.JSON[0]
 
                     var texture = null
                     var visible = null
@@ -588,6 +588,206 @@ vars.menu.menus.JSON.upgrades = [
             }
             // Health regen
         ]
+    },
+    {
+        "text": "Achievements",
+        "content": function() {
+            var xGap = 125
+            var x = xGap
+            var y = 150
+            var content = [
+                {
+                    "type": "image",
+                    "imgs": [
+                        "Achievement_Info_Background"
+                    ],
+                    "selected": 0,
+                    "x": 0,
+                    "y": 0,
+                    "initfunc": function() {
+                        me.width = 350
+                        me.height = 350
+                        me.alpha = 0
+                        me.anchor.setTo(0.5)
+
+                        me.x = width / 2
+                        me.y = height / 2
+                        me.vars.normalX = me.x
+                        me.vars.normalY = me.y
+
+                        me.vars.fadeDestination = 0
+                    },
+                    "mainfunc": function() {
+                        if (me.alpha != me.vars.fadeDestination) {
+                            if (me.alpha < me.vars.fadeDestination) {
+                                me.alpha = me.alpha + 0.1
+                            }
+                            else {
+                                me.alpha = me.alpha - 0.1
+                            }
+                            if (Math.abs(me.alpha - me.vars.fadeDestination) < 0.1) {
+                                me.alpha = me.vars.fadeDestination
+                            }
+                        }
+                        if (me.alpha == 0) {
+                            me.visible = false
+                        }
+                        else {
+                            me.visible = true
+                        }
+                        me.bringToTop()
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "Achievement info",
+                    "x": 400,
+                    "y": 100,
+                    "initfunc": function() {
+                        me.fontSize = "20pt"
+
+                        me.anchor.setTo(0.5, 0)
+                        me.wordWrapWidth = 300
+                        me.wordWrap = true
+                    },
+                    "mainfunc": function() {
+                        me.bringToTop()
+
+                        var achievementInfoSprite = vars.menu.currentMenu.JSON[0].sprite
+                        me.alpha = achievementInfoSprite.alpha
+                        me.visible = achievementInfoSprite.visible
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "",
+                    "x": 400,
+                    "y": 135,
+                    "initfunc": function() {
+                        me.fontSize = "15pt"
+
+                        me.anchor.setTo(0.5, 0)
+                        me.wordWrapWidth = 300
+                        me.wordWrap = true
+                    },
+                    "mainfunc": function() {
+                        me.bringToTop()
+
+                        var achievementInfoSprite = vars.menu.currentMenu.JSON[0].sprite
+                        me.alpha = achievementInfoSprite.alpha
+                        me.visible = achievementInfoSprite.visible
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "",
+                    "x": 400,
+                    "y": 175,
+                    "initfunc": function() {
+                        me.fontSize = "12pt"
+
+                        me.anchor.setTo(0.5, 0)
+                        me.wordWrapWidth = 300
+                        me.wordWrap = true
+                    },
+                    "mainfunc": function() {
+                        me.bringToTop()
+
+                        var achievementInfoSprite = vars.menu.currentMenu.JSON[0].sprite
+                        me.alpha = achievementInfoSprite.alpha
+                        me.visible = achievementInfoSprite.visible
+                    }
+                },
+                {
+                    "type": "button",
+                    "active": true,
+                    "selected": 0,
+                    "imgs": [
+                        "Close_Button",
+                        "Close_Button_Hover"
+                    ],
+                    "x": 0,
+                    "y": 0,
+                    "initfunc": function() {
+                        me.width = 20
+                        me.height = 20
+                        me.anchor.setTo(1, 0)
+
+                        var achievementInfoSprite = vars.menu.currentMenu.JSON[0].sprite
+                        me.x = achievementInfoSprite.x + (achievementInfoSprite.width / 2)
+                        me.y = achievementInfoSprite.y - (achievementInfoSprite.height / 2)
+                        me.vars.normalX = me.x
+                        me.vars.normalY = me.y
+
+                        me.vars.normalImg = me.key
+                    },
+                    "mainfunc": function() {
+                        var achievementInfoSprite = vars.menu.currentMenu.JSON[0].sprite
+                        me.alpha = achievementInfoSprite.alpha
+                        me.visible = achievementInfoSprite.visible
+                        // Copy the background ^
+
+                        me.bringToTop()
+                    },
+                    "clickfunc": function() {
+                        vars.menu.currentMenu.JSON[0].sprite.vars.fadeDestination = 0
+                    },
+                    "hoverstart": function() {
+                        me.loadTexture(me.vars.normalImg + "_Hover")
+                    },
+                    "hoverend": function() {
+                        me.loadTexture(me.vars.normalImg)
+                    },
+                    "hoverMessage": "Close achievement info"
+                }
+            ]
+
+            var i = 0
+            for (i in vars.game.achievements) { // TODO: fix hover images
+                content[content.length] = {
+                    "type": "button",
+                    "active": true,
+                    "selected": 0,
+                    "imgs": [
+                        vars.game.achievements[i].info.icon
+                    ],
+                    "x": x,
+                    "y": y,
+                    "data": {
+                        "id": i
+                    },
+                    "initfunc": function() {
+                        me.width = 100
+                        me.height = 100
+
+                        me.vars.normalImg = me.key
+                    },
+                    "mainfunc": function() {
+
+                    },
+                    "clickfunc": function() {
+                        vars.menu.currentMenu.JSON[0].sprite.vars.fadeDestination = 0.95
+
+                        vars.menu.currentMenu.JSON[2].sprite.setText(vars.game.achievements[me.vars.JSON.data.id].info.name)
+                        vars.menu.currentMenu.JSON[3].sprite.setText(vars.game.achievements[me.vars.JSON.data.id].info.desc)
+                    },
+                    "hoverstart": function() {
+                        me.loadTexture(me.vars.normalImg + "_Hover")
+                    },
+                    "hoverend": function() {
+                        me.loadTexture(me.vars.normalImg)
+                    },
+                    "hoverMessage": "Achievement #" + (JSON.parse(i) + 1) + ": " + vars.game.achievements[i].info.name
+                }
+                x = x + (100 + 10)
+                if (x > 800 - xGap) {
+                    y = y + (100 + 10)
+                    x = xGap
+                }
+            }
+
+            return content
+        }
     }
     //{
     //    "text": "Settings"

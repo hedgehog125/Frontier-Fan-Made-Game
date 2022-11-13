@@ -248,7 +248,19 @@ if (! ("useCanvas" in window)) {
 
 function testRenderers() {
 	console.log("JAMESCRIPT: Running speedtest...")
-	Game = new Phaser.Game(width, height, Phaser.AUTO, "game", null, false, false)
+	var gameConfig = {
+    	"width": width,
+    	"height": height,
+    	"renderer": Phaser.AUTO,
+    	"parent": "game",
+    	"transparent": false,
+    	"antialias": false,
+		//"resolution": Math.floor((Math.max(window.innerWidth, window.innerHeight) / Math.max(width, height)) * window.devicePixelRatio),
+		"resolution": window.devicePixelRatio,
+    	"scaleMode": Phaser.ScaleManager.SHOW_ALL
+	}
+	Game = new Phaser.Game(gameConfig)
+	//Game = new Phaser.Game(width, height, Phaser.AUTO, "game", null, false, false)
 	testTick = 0
 	speedtestSprites = []
 	Game.state.add("Test", {
@@ -307,7 +319,22 @@ function testRenderers() {
 
 				setTimeout(function() {
 					Game.destroy()
-					Game = new Phaser.Game(width, height, mode, "game", null, false, false)
+					var gameConfig = {
+				    	"width": width,
+				    	"height": height,
+				    	"renderer": mode,
+				    	"parent": "game",
+				    	"transparent": false,
+				    	"antialias": false,
+						//"resolution": Math.round((Math.max(window.innerWidth, window.innerHeight) / Math.max(width, height)) * window.devicePixelRatio),
+						//"resolution": window.devicePixelRatio,
+						//"resolution": 1.5,
+				    	//"scaleMode": Phaser.ScaleManager.SHOW_ALL
+					}
+					Game = new Phaser.Game(gameConfig)
+					//Game.renderer.width = window.innerWidth * window.devicePixelRatio
+					//Game.renderer.height = window.innerHeight * window.devicePixelRatio
+					//Game = new Phaser.Game(width, height, mode, "game", null, false, false)
 					console.log("Begining loading assets...")
 					console.log("\n")
 					setTimeout(setup, 30)
